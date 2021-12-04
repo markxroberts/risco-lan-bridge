@@ -1,7 +1,7 @@
-[![license badge](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/TJForc/risco-lan-bridge/blob/main/LICENSE)
-[![Package Version](https://shields.io/npm/v/risco-lan-bridge/latest)](https://www.npmjs.com/package/risco-lan-bridge)
-[![Node Version](https://shields.io/node/v/risco-lan-bridge)](https://www.npmjs.com/package/risco-lan-bridge)
-[![Maintenance badge](https://shields.io/badge/maintenance-yes-green.svg)](https://github.com/TJForc/risco-lan-bridge/)
+[![license badge](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/vanackej/risco-lan-bridge/blob/main/LICENSE)
+[![Package Version](https://shields.io/npm/v/@vanackej/risco-lan-bridge/latest)](https://www.npmjs.com/package/@vanackej/risco-lan-bridge)
+[![Node Version](https://shields.io/node/v/@vanackej/risco-lan-bridge)](https://www.npmjs.com/package/@vanackej/risco-lan-bridge)
+[![Maintenance badge](https://shields.io/badge/maintenance-yes-green.svg)](https://www.npmjs.com/package/@vanackej/risco-lan-bridge)
 
 
 
