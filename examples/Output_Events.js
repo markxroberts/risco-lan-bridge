@@ -28,10 +28,10 @@
 const RiscoPanel = require('risco-lan-bridge').RiscoPanel;
 
 let Options = {
-    Panel_IP: '192.168.0.100',
-    Panel_Port: 1000,
-    Panel_Password: 5678,
-    Panel_Id: '0001',
+    panelIp: '192.168.0.100',
+    panelPort: 1000,
+    panelPassword: 5678,
+    panelId: '0001',
 };
 
 let Panel = new RiscoPanel(Options);
@@ -46,7 +46,7 @@ Panel.on('SystemInitComplete', () => {
     });
 
     // Listen specific event for Output Id 1
-    let Monitored_Output = Panel.Outputs.ById(1);
+    let Monitored_Output = Panel.Outputs.byId(1);
     Monitored_Output.on('Actived', (Id) => {
         console.log(`Output ${Id} Actived`)
     });

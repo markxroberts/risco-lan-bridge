@@ -1,29 +1,31 @@
-const Net = require("net");
-const Socket = Net.Socket;
+import {Risco_Base_Socket} from "./RiscoChannels";
+import * as Net from "net";
+import {Server} from "net";
+
 const Log_Level = require('./constants').Log_Level
-const Risco_Base_Socket = require("./RiscoChannels").Risco_Base_Socket;
 
-class Risco_ProxyTCP_Socket extends Risco_Base_Socket {
+export class Risco_ProxyTCP_Socket extends Risco_Base_Socket {
 
-    constructor(SocketOptions) {
-        super(SocketOptions);
+    private ProxyInServer: Server | null = null;
+    private CloudConnected: boolean = false;
+    private CloudSocket: undefined;
 
-        this.SocketMode = 'proxy';
+    constructor(SocketOptions: any) {
+        super(SocketOptions, 'proxy');
+
         this.SocketTimeout = 120000;
         this.CloudRetryTimer = undefined;
 
         this.ListeningPort = SocketOptions.ListeningPort;
         this.CloudPort = SocketOptions.CloudPort;
         this.CloudUrl = SocketOptions.CloudUrl;
-
-        this.TCPConnect();
     }
 
     /*
      * Create TCP Connection
      * @return  {Promise}
      */
-    TCPConnect() {
+    async TCPConnect(): Promise<boolean> {
         return new Promise((resolve, reject) => {
             try {
                 if (this.ProxyInServer === undefined) {
@@ -35,7 +37,7 @@ class Risco_ProxyTCP_Socket extends Risco_Base_Socket {
                 }
                 this.ProxyInServer.on('error', (err) => {
                     if (err.code === 'EADDRINUSE') {
-                        this.logger(this.log, Log_Level.ERROR, `Cannot start Proxy ; Address already in use, retrying within 5sec...`);
+                        logger.log('error', `Cannot start Proxy ; Address already in use, retrying within 5sec...`);
                         setTimeout(() => {
                             this.ProxyInServer.close();
                             this.ProxyInServer.listen(this.ListeningPort);
@@ -59,7 +61,7 @@ class Risco_ProxyTCP_Socket extends Risco_Base_Socket {
                             // 5678 != 05678 != 005678
                             const max_Password_Value = 999999;
                             if (this.DiscoverCode) {
-                                this.logger(this.log, Log_Level.DEBUG, `Discovery Mode Enabled.`);
+                                logger.log('debug', `Discovery Mode Enabled.`);
                                 if (this.Discovering) {
                                     do {
                                         if ((this.Password > max_Password_Value) && (this.Password_length < 6)){
@@ -72,12 +74,12 @@ class Risco_ProxyTCP_Socket extends Risco_Base_Socket {
                                         }
                                     } while ((this.Password_length <= this.Password.toString().length) && (this.Password_length > 1));
                                 } else {
-                                    this.logger(this.log, Log_Level.ERROR, `Bad Access Code : ${this.Password}`);
+                                    logger.log('error', `Bad Access Code : ${this.Password}`);
                                     this.Discovering = true;
                                     this.Password = 0;
                                     this.Password_length = 1;
                                     this.once('AccessCodeOk', () => {
-                                        this.logger(this.log, Log_Level.VERBOSE, `Discovered Access Code : ${this.Password}`);
+                                        logger.log('verbose', `Discovered Access Code : ${this.Password}`);
                                         this.Discovering = false;
                                     });
                                 }
@@ -85,14 +87,14 @@ class Risco_ProxyTCP_Socket extends Risco_Base_Socket {
                                 this.Sequence_Id = 1;
                                 this.PanelConnect(code_len);
                             } else {
-                                this.logger(this.log, Log_Level.ERROR, `Discovery Mode Is not Enabled. To Discovering Access Code, Enable it!!`);
+                                logger.log('error', `Discovery Mode Is not Enabled. To Discovering Access Code, Enable it!!`);
                             }
                         });
                         this.CloudSocket.on('ready', async () => {
                             if (this.CloudRetryTimer !== undefined) {
                                 clearTimeout(this.CloudRetryTimer);
                             }
-                            this.logger(this.log, Log_Level.VERBOSE, `Panel Socket and RiscoCloud Socket Connected.`);
+                            logger.log('verbose', `Panel Socket and RiscoCloud Socket Connected.`);
                             this.IsConnected = true;
                             do {
                                 await new Promise(r => setTimeout(r, 1000));
@@ -100,20 +102,20 @@ class Risco_ProxyTCP_Socket extends Risco_Base_Socket {
                             this.PanelConnect();
                         });
                         this.Socket.once('error', (error) => {
-                            this.logger(this.log, Log_Level.ERROR, `Socket Error : ${error.toString()}`);
+                            logger.log('error', `Socket Error : ${error.toString()}`);
                             if (!this.CloudSocket.destroyed) {
                                 this.CloudSocket.destroy(`Destroy RiscoCloud Socket due to Panel Socket Error`)
                             }
                         });
                         this.CloudSocket.on('error', (error) => {
                             if (error.code === 'ECONNREFUSED') {
-                                this.logger(this.log, Log_Level.ERROR, `Cannot connect to RiscoCloud, retrying within 5sec...`);
+                                logger.log('error', `Cannot connect to RiscoCloud, retrying within 5sec...`);
                                 this.CloudSocket.end();
                                 this.CloudRetryTimer = setTimeout(() => {
                                     this.CloudSocket.connect(this.CloudPort, this.CloudUrl);
                                 }, 5000);
                             } else {
-                                this.logger(this.log, Log_Level.ERROR, `RiscoCloud Socket Error : ${error.toString()}`);
+                                logger.log('error', `RiscoCloud Socket Error : ${error.toString()}`);
                                 if (this.Socket && !this.Socket.destroyed) {
                                     this.Socket.destroy(`Destroy Panel Socket due to RiscoCloud Socket Error`);
                                 }
@@ -125,7 +127,7 @@ class Risco_ProxyTCP_Socket extends Risco_Base_Socket {
                             }
                         })
                         this.Socket.once('close', () => {
-                            this.logger(this.log, Log_Level.ERROR, `Socket Closed.`);
+                            logger.log('error', `Socket Closed.`);
                             if (this.CloudRetryTimer !== undefined) {
                                 clearTimeout(this.CloudRetryTimer);
                             }
@@ -133,7 +135,7 @@ class Risco_ProxyTCP_Socket extends Risco_Base_Socket {
                         });
                         this.CloudSocket.on('close', () => {
                             if (this.CloudRetryTimer === undefined) {
-                                this.logger(this.log, Log_Level.ERROR, `RiscoCloud Socket Closed.`);
+                                logger.log('error', `RiscoCloud Socket Closed.`);
                                 if (this.Socket && !this.Socket.destroyed) {
                                     this.Socket.end(`Close Panel Socket due to RiscoCloud Socket is Closed`);
                                     this.Disconnect();
@@ -141,11 +143,11 @@ class Risco_ProxyTCP_Socket extends Risco_Base_Socket {
                             }
                         });
                         this.Socket.on('timeout', () => {
-                            this.logger(this.log, Log_Level.ERROR, `${new Date().toLocaleTimeString()} Panel Socket Timeout.`);
+                            logger.log('error', `Panel Socket Timeout.`);
                             this.Disconnect();
                         });
                         this.CloudSocket.on('timeout', () => {
-                            this.logger(this.log, Log_Level.ERROR, `${new Date().toLocaleTimeString()} RiscoCloud Socket Timeout.`);
+                            logger.log('error', `RiscoCloud Socket Timeout.`);
                             if (this.Socket && !this.Socket.destroyed) {
                                 this.Socket.end(`Close Panel Socket due to RiscoCloud Socket Timeout`);
                             }
@@ -160,18 +162,18 @@ class Risco_ProxyTCP_Socket extends Risco_Base_Socket {
                         this.CloudSocket.connect(this.CloudPort, this.CloudUrl);
                         resolve(true);
                     } catch (err) {
-                        this.logger(this.log, Log_Level.ERROR, `RiscoCloud Socket Error : ${error}`);
+                        logger.log('error', `RiscoCloud Socket Error : ${error}`);
                     }
                 });
                 this.ProxyInServer.on('listening', () => {
                     const ProxyInfo = this.ProxyInServer.address();
-                    this.logger(this.log, Log_Level.INFO, `Listening on IP ${ProxyInfo.address} and Port ${ProxyInfo.port}`);
+                    logger.log('info', `Listening on IP ${ProxyInfo.address} and Port ${ProxyInfo.port}`);
                 });
                 if (!this.ProxyInServer.listening) {
                     this.ProxyInServer.listen(this.ListeningPort);
                 }
             } catch (err) {
-                this.logger(this.log, Log_Level.ERROR, `Error on Internal Socket creation : ${err}`);
+                logger.log('error', `Error on Internal Socket creation : ${err}`);
             }
         });
     }
@@ -183,20 +185,20 @@ class Risco_ProxyTCP_Socket extends Risco_Base_Socket {
     async NewDataHandler_PanelSocket(new_output_data) {
         let StringedBuffer = this.GetStringedBuffer(new_output_data);
         if (new_output_data[1] === 19) {
-            let DecryptedBuffer = new Buffer.from(new_output_data, this.Encoding).toString(this.Encoding);
-            this.logger(this.log, Log_Level.DEBUG, `Received Cloud data Buffer from Panel : ${StringedBuffer}`);
+            let DecryptedBuffer = new Buffer.from(new_output_data, this.encoding).toString(this.encoding);
+            logger.log('debug', `Received Cloud data Buffer from Panel : ${StringedBuffer}`);
             this.CloudSocket.write(new_output_data);
         } else {
-            let DecryptedBuffer = new Buffer.from(new_output_data, this.Encoding).toString(this.Encoding);
+            let DecryptedBuffer = new Buffer.from(new_output_data, this.encoding).toString(this.encoding);
             if (new_output_data[1] !== 17) {
-                this.logger(this.log, Log_Level.DEBUG, `Received data Buffer from Panel : ${StringedBuffer}`);
+                logger.log('debug', `Received data Buffer from Panel : ${StringedBuffer}`);
                 if (this.InRemoteConn) {
                     this.CloudSocket.write(new_output_data);
                 } else {
                     this.NewDataHandler(new_output_data);
                 }
             } else if (new_output_data[1] === 17) {
-                this.logger(this.log, Log_Level.DEBUG, `Received data Buffer from Panel : ${StringedBuffer}`);
+                logger.log('debug', `Received data Buffer from Panel : ${StringedBuffer}`);
                 if (this.InRemoteConn) {
                     // To be able to correctly intercept the end of the remote connection, we must be able to decrypt
                     // the commands exchanged between the control panel and the RiscoCloud as soon as possible.
@@ -211,16 +213,16 @@ class Risco_ProxyTCP_Socket extends Risco_Base_Socket {
                             do {
                                 // Because the Buffer is modified by reference during decryption, a new Buffer is created on each attempt.
                                 let TestBufferData = new Buffer.from(new_output_data);
-                                this.RCrypt.Panel_Id = PossibleKey;
+                                this.RCrypt.panelId = PossibleKey;
                                 this.RCrypt.UpdatePseudoBuffer();
                                 [RmtId, RmtCommandStr, RmtIsCRCOK] = this.RCrypt.DecodeMessage(TestBufferData);
                                 TestResultOk = (() => {
                                     if (RmtIsCRCOK) {
-                                        this.logger(this.log, Log_Level.DEBUG, `Panel Id is possible candidate : ${PossibleKey}`);
+                                        logger.log('debug', `Panel Id is possible candidate : ${PossibleKey}`);
                                         this.InCryptTest = false;
                                         return true;
                                     } else {
-                                        this.logger(this.log, Log_Level.DEBUG, `Panel Id is not : ${PossibleKey}`);
+                                        logger.log('debug', `Panel Id is not : ${PossibleKey}`);
                                         PossibleKey--;
                                         return false;
                                     }
@@ -255,16 +257,16 @@ class Risco_ProxyTCP_Socket extends Risco_Base_Socket {
             setTimeout(async () => {
                 this.CloudConnected = true;
             }, 45000);
-            this.logger(this.log, Log_Level.DEBUG, `Received Cloud data Buffer from RiscoCloud : ${StringedBuffer}`);
+            logger.log('debug', `Received Cloud data Buffer from RiscoCloud : ${StringedBuffer}`);
             this.Socket.write(new_input_data);
         } else {
             this.Socket.write(new_input_data);
-            let DecryptedBuffer = new Buffer.from(new_input_data, this.Encoding).toString(this.Encoding);
+            let DecryptedBuffer = new Buffer.from(new_input_data, this.encoding).toString(this.encoding);
             let RmtCommandStr = undefined;
             let RmtIsCRCOK = undefined;
             [this.LastRmtId, RmtCommandStr, RmtIsCRCOK] = this.RCrypt.DecodeMessage(new Buffer.from(new_input_data));
             if (new_input_data[1] !== 17) {
-                this.logger(this.log, Log_Level.DEBUG, `Received Remote data Buffer from RiscoCloud : ${StringedBuffer}`);
+                logger.log('debug', `Received Remote data Buffer from RiscoCloud : ${StringedBuffer}`);
                 switch (true) {
                     case (RmtCommandStr.includes('RMT=')):
                         this.emit('IncomingRemoteConnection');
@@ -272,8 +274,8 @@ class Risco_ProxyTCP_Socket extends Risco_Base_Socket {
                         if (this.IsConnected) {
                             const RmtPassword = RmtCommandStr.substring(RmtCommandStr.indexOf('=') + 1);
                             if (parseInt(RmtPassword, 10) === parseInt(this.Password, 10)){
-                                const FakeResponse = this.RCrypt.GetCommande('ACK', this.LastRmtId, false);
-                                this.logger(this.log, Log_Level.DEBUG, `Send Fake Response to RiscoCloud Socket : ${this.GetStringedBuffer(FakeResponse)}`);
+                                const FakeResponse = this.RCrypt.getCommand('ACK', this.LastRmtId, false);
+                                logger.log('debug', `Send Fake Response to RiscoCloud Socket : ${this.GetStringedBuffer(FakeResponse)}`);
                                 this.CloudSocket.write(FakeResponse);
                             }
                         } else {
@@ -282,8 +284,8 @@ class Risco_ProxyTCP_Socket extends Risco_Base_Socket {
                         break;
                     case (DecryptedBuffer.includes('LCL')):
                         if (this.IsConnected) {
-                            const FakeResponse = this.RCrypt.GetCommande('ACK', this.LastRmtId, false);
-                            this.logger(this.log, Log_Level.DEBUG, `Send Fake Response to RiscoCloud Socket : ${this.GetStringedBuffer(FakeResponse)}`);
+                            const FakeResponse = this.RCrypt.getCommand('ACK', this.LastRmtId, false);
+                            logger.log('debug', `Send Fake Response to RiscoCloud Socket : ${this.GetStringedBuffer(FakeResponse)}`);
                             this.CloudSocket.write(FakeResponse);
                         } else {
                             this.Socket.write(new_input_data);
@@ -297,8 +299,8 @@ class Risco_ProxyTCP_Socket extends Risco_Base_Socket {
                 this.Socket.write(new_input_data);
                 if (this.InRemoteConn && RmtIsCRCOK && RmtCommandStr.includes('DCN')) {
                     this.InRemoteConn = false;
-                    const FakeResponse = this.RCrypt.GetCommande('ACK', this.LastRmtId, true);
-                    this.logger(this.log, Log_Level.DEBUG, `Send Fake Response to RiscoCloud Socket : ${this.GetStringedBuffer(FakeResponse)}`);
+                    const FakeResponse = this.RCrypt.getCommand('ACK', this.LastRmtId, true);
+                    logger.log('debug', `Send Fake Response to RiscoCloud Socket : ${this.GetStringedBuffer(FakeResponse)}`);
                     this.CloudSocket.write(FakeResponse);
                     this.emit('EndIncomingRemoteConnection');
                 }
@@ -333,7 +335,7 @@ class Risco_ProxyTCP_Socket extends Risco_Base_Socket {
             .then( async (data) => {
                 if ((data !== undefined) && data && (data.includes('ACK') === true)) {
                     if (this.Discovering) {
-                        this.logger(this.log, Log_Level.DEBUG, `Access Code is Ok : ${this.Password}`);
+                        logger.log('debug', `Access Code is Ok : ${this.Password}`);
                         this.emit('AccessCodeOk');
                         this.Discovering = false;
                     }
@@ -355,11 +357,11 @@ class Risco_ProxyTCP_Socket extends Risco_Base_Socket {
                     this.InCryptTest = true;
                     [CryptResult, TestBuffer] = await this.CryptTableTester();
                     if (this.DiscoverCode && !this.CryptKeyValidity) {
-                        this.logger(this.log, Log_Level.DEBUG, `Bad Panel Id : ${this.RCrypt.Panel_Id}.`);
+                        logger.log('debug', `Bad Panel Id : ${this.RCrypt.panelId}.`);
                         let CryptedResponseBuffer = new Buffer.from(TestBuffer);
                         this.emit('BadCryptKey');
                         this.once('CryptKeyOk', () => {
-                            this.logger(this.log, Log_Level.VERBOSE, `Discovered Panel Id : ${this.RCrypt.Panel_Id}.`);
+                            logger.log('verbose', `Discovered Panel Id : ${this.RCrypt.panelId}.`);
                             this.InCryptTest = false;
                         });
                         let TestResultOk = false;
@@ -367,15 +369,15 @@ class Risco_ProxyTCP_Socket extends Risco_Base_Socket {
                             do {
                                 // Because the Buffer is modified by reference during decryption, a new Buffer is created on each attempt.
                                 let TestBufferData = new Buffer.from(CryptedResponseBuffer);
-                                this.RCrypt.Panel_Id = PossibleKey;
+                                this.RCrypt.panelId = PossibleKey;
                                 this.RCrypt.UpdatePseudoBuffer();
                                 let [Receive_Id, ReceiveCommandStr, IsCRCOK] = this.RCrypt.DecodeMessage(TestBufferData);
                                 TestResultOk = (() => {
                                     if (IsCRCOK) {
-                                        this.logger(this.log, Log_Level.DEBUG, `Panel Id is possible candidate : ${PossibleKey}`);
+                                        logger.log('debug', `Panel Id is possible candidate : ${PossibleKey}`);
                                         return true;
                                     } else {
-                                        this.logger(this.log, Log_Level.DEBUG, `Panel Id is not : ${PossibleKey}`);
+                                        logger.log('debug', `Panel Id is not : ${PossibleKey}`);
                                         PossibleKey--;
                                         return false;
                                     }
@@ -411,11 +413,11 @@ class Risco_ProxyTCP_Socket extends Risco_Base_Socket {
 
         if (!this.Discovering) {
             if (ConnectPanel !== false) {
-                this.logger(this.log, Log_Level.DEBUG, `Connection to the control panel successfully established.`);
+                logger.log('debug', `Connection to the control panel successfully established.`);
                 this.IsConnected = true;
                 this.emit('PanelConnected');
             } else {
-                this.logger(this.log, Log_Level.ERROR, `Error when connecting to the control panel.`);
+                logger.log('error', `Error when connecting to the control panel.`);
                 this.Disconnect();
             }
         }
@@ -436,19 +438,15 @@ class Risco_ProxyTCP_Socket extends Risco_Base_Socket {
                 this.Socket.removeAllListeners();
                 this.Socket.destroy();
                 this.Socket = undefined;
-                this.logger(this.log, Log_Level.DEBUG, `Socket Destroyed.`);
+                logger.log('debug', `Socket Destroyed.`);
             }
         }
         if ((this.CloudSocket !== undefined) && (!this.CloudSocket.destroyed)) {
             this.CloudSocket.destroy();
-            this.logger(this.log, Log_Level.DEBUG, `RiscoCloud Socket Destroyed.`);
+            logger.log('debug', `RiscoCloud Socket Destroyed.`);
             this.CloudSocket.removeAllListeners();
             this.CloudSocket = undefined;
         }
         this.CloudConnected = false;
     }
-}
-
-module.exports = {
-    Risco_ProxyTCP_Socket: Risco_ProxyTCP_Socket
 }

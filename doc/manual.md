@@ -4,8 +4,8 @@ When using this package, you should know several information:
 - The type of panel to invoke (Agility / Wicomm / WicommPro / LightSYS / ProSYSPlus / GTPlus).
 - The control panel's IP address (it is recommended that your control panel operates with a Fixed IP or a DHCP address reservation).
 - The listening TCP port of your central unit. By default, this port is port 1000, but the installer may well have changed it.
-- The access code (Panel_Password options). By default, this code is 5678 and it is rarely changed. (If this code has been changed, see the FAQ for more information on the discovery procedure)
-- The protocol encryption key (or Panel_Id). By default, this key is equal to 1 when it leaves the factory and, again, it is rare that it is changed during installation.
+- The access code (panelPassword options). By default, this code is 5678 and it is rarely changed. (If this code has been changed, see the FAQ for more information on the discovery procedure)
+- The protocol encryption key (or panelId). By default, this key is equal to 1 when it leaves the factory and, again, it is rare that it is changed during installation.
 
 # Initialization and launch of the connection
 
@@ -29,19 +29,19 @@ First, you need to set the options that will be used to instantiate a RiscoPanel
 // All the values shown below are the default values (except for the logger and log options)
 let  Options = {
 // Define Panel IP Address (Optional)
-Panel_IP:  '192.168.0.100',
+panelIp:  '192.168.0.100',
 // Define Panel TCP Port (Optional)
-Panel_Port:  1000,
+panelPort:  1000,
 // Define Panel Access Code (Optional)
-Panel_Password:  5678,
+panelPassword:  5678,
 // Define Panel ID (Optional)
-Panel_Id:  '0001',
+panelId:  '0001',
 // Activate autodiscover (Optional)
-AutoDiscover:  true,
+autoDiscover:  true,
 // Defines the waiting time for a reconnection in ms (Optional)
 ReconnectDelay:  10000,
 // Defines automatic connection (Optional)
-AutoConnect:  true,
+autoConnect:  true,
 // Defines if the plugin should deactivate RiscoCloud on the control panel (Optional)
 Disable_RiscoCloud:  true,
 // Defines if the plugin should activate RiscoCloud on the control panel (Optional)

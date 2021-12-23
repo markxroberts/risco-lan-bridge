@@ -28,10 +28,10 @@
 const RiscoPanel = require('risco-lan-bridge').RiscoPanel;
 
 let Options = {
-    Panel_IP: '192.168.0.100',
-    Panel_Port: 1000,
-    Panel_Password: 5678,
-    Panel_Id: '0001',
+    panelIp: '192.168.0.100',
+    panelPort: 1000,
+    panelPassword: 5678,
+    panelId: '0001',
 };
 
 let Panel = new RiscoPanel(Options);
@@ -41,7 +41,7 @@ let Panel = new RiscoPanel(Options);
 // - listen to 'Bypassed' and 'UnBypassed' events (see Zone_Events.js file)
 // - Retrieve the state of the 'Bypass' property of the zone
 let GetZoneBypassState = (() => {
-    if ((Panel.Zones.ById(1)).Bypass) {
+    if ((Panel.Zones.byId(1)).Bypass) {
         console.log('Zone is Bypassed');
     } else {
         console.log('Zone is UnBypassed');
