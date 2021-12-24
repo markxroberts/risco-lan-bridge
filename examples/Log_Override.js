@@ -55,19 +55,19 @@ const log_channel = console;
 
 let Options = {
     // Define Panel IP Address (Optional)
-    Panel_IP: '192.168.0.100',
+    panelIp: '192.168.0.100',
     // Define Panel TCP Port (Optional)
-    Panel_Port: 1000,
+    panelPort: 1000,
     // Define Panel Access Code (Optional)
-    Panel_Password: 5678,
+    panelPassword: 5678,
     // Define Panel ID  (Optional)
-    Panel_Id: '0001',
+    panelId: '0001',
     // Activate autodiscover (Optional)
-    AutoDiscover: true,
+    autoDiscover: true,
     // Defines the waiting time for a reconnection in ms (Optional)
     ReconnectDelay: 10000,
     // Defines automatic connection (Optional)
-    AutoConnect: true,
+    autoConnect: true,
     // Defines if the plugin should deactivate RiscoCloud on the control panel (Optional)
     Disable_RiscoCloud: true,
     // Defines if the plugin should discover the access codes and the Id panel automatically (Optional)

@@ -41,19 +41,19 @@ First of all, you must define the options necessary to define the Risco Panel Ob
 ```
 let  Options = {
 // Define Panel IP Address (Optional)
-Panel_IP:  '192.168.0.100',
+panelIp:  '192.168.0.100',
 // Define Panel TCP Port (Optional)
-Panel_Port:  1000,
+panelPort:  1000,
 // Define Panel Access Code (Optional)
-Panel_Password:  5678,
+panelPassword:  5678,
 // Define Panel ID (Optional)
-Panel_Id:  '0001',
+panelId:  '0001',
 // Activate autodiscover (Optional)
-AutoDiscover:  true,
+autoDiscover:  true,
 // Defines the waiting time for a reconnection in ms (Optional)
 ReconnectDelay:  10000,
 // Defines automatic connection (Optional)
-AutoConnect:  true,
+autoConnect:  true,
 // Defines if the plugin should deactivate RiscoCloud on the control panel (Optional)
 Disable_RiscoCloud:  true,
 // Defines if the plugin should activate RiscoCloud on the control panel (Optional)
@@ -76,7 +76,7 @@ logger:  logger_function,
 log:  log_channel
 };
 ````
-All these options are not mandatory, the only really essential option is the 'Panel_IP' option (unless the TCP Port, Panel Id and remote password are not the default ones, in which case they must also be specified).
+All these options are not mandatory, the only really essential option is the 'panelIp' option (unless the TCP Port, Panel Id and remote password are not the default ones, in which case they must also be specified).
 
 For Socket mode, see the [wiki](https://github.com/TJForc/risco-lan-bridge/wiki/Socket-Mode) for more information
 

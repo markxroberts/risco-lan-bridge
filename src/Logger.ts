@@ -27,31 +27,46 @@
 
 'use strict';
 
-const constants = require('./constants');
-const Log_Level = constants.Log_Level;
-const log = console;
+import {LogLevel} from "./constants";
 
-const logger = (log_channel, log_lvl, log_data) => {
-    switch (log_lvl) {
-        case Log_Level.ERROR :
-            log_channel.error(log_data);
-            break;
-        case Log_Level.WARN :
-            log_channel.warn(log_data);
-            break;
-        case Log_Level.INFO :
-            log_channel.info(log_data);
-            break;
-        case Log_Level.VERBOSE :
-            log_channel.info(log_data);
-            break;
-        case Log_Level.DEBUG :
-            log_channel.debug(log_data);
-            break;
+export interface RiscoLogger {
+    log(log_lvl: LogLevel, log_data: any): void
+}
+
+class DefaultLogger implements RiscoLogger {
+    log(log_lvl: LogLevel, log_data: any): void {
+        const ts = new Date().toISOString()
+        const logMessage = `${ts} ${log_data}`
+        switch (log_lvl) {
+            case 'error' :
+                console.error(logMessage);
+                break;
+            case 'warn' :
+                console.warn(logMessage);
+                break;
+            case "info" :
+                console.info(logMessage);
+                break;
+            case "verbose" :
+                console.info(logMessage);
+                break;
+            case "debug" :
+                console.debug(logMessage);
+                break;
+        }
     }
-};
+}
 
-module.exports = {
-    logger: logger,
-    log: log
-};
+class DelegatingLogger implements RiscoLogger {
+
+    constructor(public delegate: RiscoLogger) {
+    }
+
+    log(log_lvl: LogLevel, log_data: any) {
+        this.delegate.log(log_lvl, log_data);
+    }
+
+
+}
+
+export const logger = new DelegatingLogger(new DefaultLogger())

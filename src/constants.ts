@@ -28,26 +28,27 @@
 'use strict';
 
 // Array of 256 value for CRC Data
-const CRCArray_base64 = 'WzAsNDkzNDUsNDk1MzcsMzIwLDQ5OTIxLDk2MCw2NDAsNDk3MjksNTA2ODksMTcyOCwxOTIwLDUxMDA5LDEyODAsNTA2MjUsNTAzMDUsMTA4OCw1MjIyNSwzMjY0LDM0NTYsNTI1NDUsMzg0MCw1MzE4NSw1Mjg2NSwzNjQ4LDI1NjAsNTE5MDUsNTIwOTcsMjg4MCw1MTQ1NywyNDk2LDIxNzYsNTEyNjUsNTUyOTcsNjMzNiw2NTI4LDU1NjE3LDY5MTIsNTYyNTcsNTU5MzcsNjcyMCw3NjgwLDU3MDI1LDU3MjE3LDgwMDAsNTY1NzcsNzYxNiw3Mjk2LDU2Mzg1LDUxMjAsNTQ0NjUsNTQ2NTcsNTQ0MCw1NTA0MSw2MDgwLDU3NjAsNTQ4NDksNTM3NjEsNDgwMCw0OTkyLDU0MDgxLDQzNTIsNTM2OTcsNTMzNzcsNDE2MCw2MTQ0MSwxMjQ4MCwxMjY3Miw2MTc2MSwxMzA1Niw2MjQwMSw2MjA4MSwxMjg2NCwxMzgyNCw2MzE2OSw2MzM2MSwxNDE0NCw2MjcyMSwxMzc2MCwxMzQ0MCw2MjUyOSwxNTM2MCw2NDcwNSw2NDg5NywxNTY4MCw2NTI4MSwxNjMyMCwxNjAwMCw2NTA4OSw2NDAwMSwxNTA0MCwxNTIzMiw2NDMyMSwxNDU5Miw2MzkzNyw2MzYxNywxNDQwMCwxMDI0MCw1OTU4NSw1OTc3NywxMDU2MCw2MDE2MSwxMTIwMCwxMDg4MCw1OTk2OSw2MDkyOSwxMTk2OCwxMjE2MCw2MTI0OSwxMTUyMCw2MDg2NSw2MDU0NSwxMTMyOCw1ODM2OSw5NDA4LDk2MDAsNTg2ODksOTk4NCw1OTMyOSw1OTAwOSw5NzkyLDg3MDQsNTgwNDksNTgyNDEsOTAyNCw1NzYwMSw4NjQwLDgzMjAsNTc0MDksNDA5NjEsMjQ3NjgsMjQ5NjAsNDEyODEsMjUzNDQsNDE5MjEsNDE2MDEsMjUxNTIsMjYxMTIsNDI2ODksNDI4ODEsMjY0MzIsNDIyNDEsMjYwNDgsMjU3MjgsNDIwNDksMjc2NDgsNDQyMjUsNDQ0MTcsMjc5NjgsNDQ4MDEsMjg2MDgsMjgyODgsNDQ2MDksNDM1MjEsMjczMjgsMjc1MjAsNDM4NDEsMjY4ODAsNDM0NTcsNDMxMzcsMjY2ODgsMzA3MjAsNDcyOTcsNDc0ODksMzEwNDAsNDc4NzMsMzE2ODAsMzEzNjAsNDc2ODEsNDg2NDEsMzI0NDgsMzI2NDAsNDg5NjEsMzIwMDAsNDg1NzcsNDgyNTcsMzE4MDgsNDYwODEsMjk4ODgsMzAwODAsNDY0MDEsMzA0NjQsNDcwNDEsNDY3MjEsMzAyNzIsMjkxODQsNDU3NjEsNDU5NTMsMjk1MDQsNDUzMTMsMjkxMjAsMjg4MDAsNDUxMjEsMjA0ODAsMzcwNTcsMzcyNDksMjA4MDAsMzc2MzMsMjE0NDAsMjExMjAsMzc0NDEsMzg0MDEsMjIyMDgsMjI0MDAsMzg3MjEsMjE3NjAsMzgzMzcsMzgwMTcsMjE1NjgsMzk5MzcsMjM3NDQsMjM5MzYsNDAyNTcsMjQzMjAsNDA4OTcsNDA1NzcsMjQxMjgsMjMwNDAsMzk2MTcsMzk4MDksMjMzNjAsMzkxNjksMjI5NzYsMjI2NTYsMzg5NzcsMzQ4MTcsMTg2MjQsMTg4MTYsMzUxMzcsMTkyMDAsMzU3NzcsMzU0NTcsMTkwMDgsMTk5NjgsMzY1NDUsMzY3MzcsMjAyODgsMzYwOTcsMTk5MDQsMTk1ODQsMzU5MDUsMTc0MDgsMzM5ODUsMzQxNzcsMTc3MjgsMzQ1NjEsMTgzNjgsMTgwNDgsMzQzNjksMzMyODEsMTcwODgsMTcyODAsMzM2MDEsMTY2NDAsMzMyMTcsMzI4OTcsMTY0NDhd';
+export const CRCArray_base64 = 'WzAsNDkzNDUsNDk1MzcsMzIwLDQ5OTIxLDk2MCw2NDAsNDk3MjksNTA2ODksMTcyOCwxOTIwLDUxMDA5LDEyODAsNTA2MjUsNTAzMDUsMTA4OCw1MjIyNSwzMjY0LDM0NTYsNTI1NDUsMzg0MCw1MzE4NSw1Mjg2NSwzNjQ4LDI1NjAsNTE5MDUsNTIwOTcsMjg4MCw1MTQ1NywyNDk2LDIxNzYsNTEyNjUsNTUyOTcsNjMzNiw2NTI4LDU1NjE3LDY5MTIsNTYyNTcsNTU5MzcsNjcyMCw3NjgwLDU3MDI1LDU3MjE3LDgwMDAsNTY1NzcsNzYxNiw3Mjk2LDU2Mzg1LDUxMjAsNTQ0NjUsNTQ2NTcsNTQ0MCw1NTA0MSw2MDgwLDU3NjAsNTQ4NDksNTM3NjEsNDgwMCw0OTkyLDU0MDgxLDQzNTIsNTM2OTcsNTMzNzcsNDE2MCw2MTQ0MSwxMjQ4MCwxMjY3Miw2MTc2MSwxMzA1Niw2MjQwMSw2MjA4MSwxMjg2NCwxMzgyNCw2MzE2OSw2MzM2MSwxNDE0NCw2MjcyMSwxMzc2MCwxMzQ0MCw2MjUyOSwxNTM2MCw2NDcwNSw2NDg5NywxNTY4MCw2NTI4MSwxNjMyMCwxNjAwMCw2NTA4OSw2NDAwMSwxNTA0MCwxNTIzMiw2NDMyMSwxNDU5Miw2MzkzNyw2MzYxNywxNDQwMCwxMDI0MCw1OTU4NSw1OTc3NywxMDU2MCw2MDE2MSwxMTIwMCwxMDg4MCw1OTk2OSw2MDkyOSwxMTk2OCwxMjE2MCw2MTI0OSwxMTUyMCw2MDg2NSw2MDU0NSwxMTMyOCw1ODM2OSw5NDA4LDk2MDAsNTg2ODksOTk4NCw1OTMyOSw1OTAwOSw5NzkyLDg3MDQsNTgwNDksNTgyNDEsOTAyNCw1NzYwMSw4NjQwLDgzMjAsNTc0MDksNDA5NjEsMjQ3NjgsMjQ5NjAsNDEyODEsMjUzNDQsNDE5MjEsNDE2MDEsMjUxNTIsMjYxMTIsNDI2ODksNDI4ODEsMjY0MzIsNDIyNDEsMjYwNDgsMjU3MjgsNDIwNDksMjc2NDgsNDQyMjUsNDQ0MTcsMjc5NjgsNDQ4MDEsMjg2MDgsMjgyODgsNDQ2MDksNDM1MjEsMjczMjgsMjc1MjAsNDM4NDEsMjY4ODAsNDM0NTcsNDMxMzcsMjY2ODgsMzA3MjAsNDcyOTcsNDc0ODksMzEwNDAsNDc4NzMsMzE2ODAsMzEzNjAsNDc2ODEsNDg2NDEsMzI0NDgsMzI2NDAsNDg5NjEsMzIwMDAsNDg1NzcsNDgyNTcsMzE4MDgsNDYwODEsMjk4ODgsMzAwODAsNDY0MDEsMzA0NjQsNDcwNDEsNDY3MjEsMzAyNzIsMjkxODQsNDU3NjEsNDU5NTMsMjk1MDQsNDUzMTMsMjkxMjAsMjg4MDAsNDUxMjEsMjA0ODAsMzcwNTcsMzcyNDksMjA4MDAsMzc2MzMsMjE0NDAsMjExMjAsMzc0NDEsMzg0MDEsMjIyMDgsMjI0MDAsMzg3MjEsMjE3NjAsMzgzMzcsMzgwMTcsMjE1NjgsMzk5MzcsMjM3NDQsMjM5MzYsNDAyNTcsMjQzMjAsNDA4OTcsNDA1NzcsMjQxMjgsMjMwNDAsMzk2MTcsMzk4MDksMjMzNjAsMzkxNjksMjI5NzYsMjI2NTYsMzg5NzcsMzQ4MTcsMTg2MjQsMTg4MTYsMzUxMzcsMTkyMDAsMzU3NzcsMzU0NTcsMTkwMDgsMTk5NjgsMzY1NDUsMzY3MzcsMjAyODgsMzYwOTcsMTk5MDQsMTk1ODQsMzU5MDUsMTc0MDgsMzM5ODUsMzQxNzcsMTc3MjgsMzQ1NjEsMTgzNjgsMTgwNDgsMzQzNjksMzMyODEsMTcwODgsMTcyODAsMzM2MDEsMTY2NDAsMzMyMTcsMzI4OTcsMTY0NDhd';
 
 // Type of Panel
-const PanelType = Object.freeze({
-    'RW132':1,
-    'RW232':2,
-    'RW332':3,
-    'RP432':4,
-    'RP512':5
-});
+export enum PanelType {
+    RW132= 'RW132',
+    RW232 ='RW232',
+    RW332 = 'RW332',
+    RP432 = 'RP432',
+    RP512 = 'RP512'
+}
+// export const PanelType: { [code: string] : number } = Object.freeze({
+//     'RW132',
+//     'RW232',
+//     'RW332':3,
+//     'RP432':4,
+//     'RP512':5
+// });
 
-const Log_Level = Object.freeze({
-    'ERROR': 'error',
-    'WARN': 'warn',
-    'INFO': 'info',
-    'VERBOSE': 'verbose',
-    'DEBUG': 'debug'
-});
+export type LogLevel = 'error' | 'warn' | 'info' | 'verbose' | 'debug';
 
-const ZoneTypeStr = Object.freeze({
+export const ZoneTypeStr: { [code: number] : string } = Object.freeze({
     0: 'Not Used',
     1: 'Exit/Entry 1',
     2: 'Exit/Entry 2',
@@ -86,7 +87,7 @@ const ZoneTypeStr = Object.freeze({
     35: 'Keyswitch Delayed Arm'
 });
 
-const ZoneTypeEnum = Object.freeze({
+export const ZoneTypeEnum: { [code: string] : number } = Object.freeze({
     NOTUSED: 0,
     EXITENTRY1: 1,
     EXITENTRY2: 2,
@@ -125,7 +126,7 @@ const ZoneTypeEnum = Object.freeze({
     KEYSWITCHDELAYEDARM: 35
 });
 
-const TimeZoneStr = Object.freeze({
+export const TimeZoneStr: { [code: number] : string } = Object.freeze({
     0: '-12:00',
     1: '-11:00',
     2: '-10:00',
@@ -162,7 +163,7 @@ const TimeZoneStr = Object.freeze({
     33: '+13:00'
 });
 
-const RiscoError = Object.freeze({
+export const RiscoError: { [code: string] : string } = Object.freeze({
     BCK2: 'Callback Error',
     N01: 'Error',
     N02: 'Unknow Error N02',
@@ -189,57 +190,4 @@ const RiscoError = Object.freeze({
     N23: 'Unknow Error N23',
     N24: 'System in Remote Upgrade',
     N25: 'CW Test Failed'
-});
-
-// Mixin Object for adding event handling to classes derived from Array Object
-let eventMixin = {
-    /**
-     * Subscribe to event, usage:
-     *  menu.on('select', function(item) { ... }
-    */
-    on(eventName, handler) {
-        if (!this._eventHandlers) this._eventHandlers = {};
-            if (!this._eventHandlers[eventName]) {
-                this._eventHandlers[eventName] = [];
-            }
-        this._eventHandlers[eventName].push(handler);
-    },
-
-    /**
-     * Cancel the subscription, usage:
-     *  menu.off('select', handler)
-     */
-    off(eventName, handler) {
-        let handlers = this._eventHandlers[eventName];
-        if (!handlers) return;
-            for (let i = 0; i < handlers.length; i++) {
-            if (handlers[i] === handler) {
-                handlers.splice(i--, 1);
-            }
-        }
-    },
-
-    /**
-     * Generate an event with the given name and data
-     *  this.trigger('select', data1, data2);
-     */
-    emit(eventName, ...args) {
-        if ((this._eventHandlers === undefined) || (!this._eventHandlers[eventName])) {
-            return; // no handlers for that event name
-        }
-
-        // call the handlers
-        this._eventHandlers[eventName].forEach(handler => handler.apply(this, args));
-    }
-};
-
-module.exports = Object.freeze({
-    PanelType: PanelType,
-    Log_Level: Log_Level,
-    CRCArray_base64: CRCArray_base64,
-    eventMixin: eventMixin,
-    ZoneTypeStr: ZoneTypeStr,
-    ZoneTypeEnum: ZoneTypeEnum,
-    TimeZoneStr: TimeZoneStr,
-    RiscoError: RiscoError
 });

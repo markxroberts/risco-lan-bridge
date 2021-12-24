@@ -28,10 +28,10 @@
 const RiscoPanel = require('risco-lan-bridge').RiscoPanel;
 
 let Options = {
-    Panel_IP: '192.168.0.100',
-    Panel_Port: 1000,
-    Panel_Password: 5678,
-    Panel_Id: '0001',
+    panelIp: '192.168.0.100',
+    panelPort: 1000,
+    panelPassword: 5678,
+    panelId: '0001',
 };
 
 let Panel = new RiscoPanel(Options);
@@ -41,7 +41,7 @@ let Panel = new RiscoPanel(Options);
 // - listen to 'Armed' and 'Disarmed' events (see Output_Events.js file)
 // - Retrieve the state of the 'Arm' property of the output
 let GetPartitionState = (() => {
-    if ((Panel.Partitions.ById(1)).Arm) {
+    if ((Panel.Partitions.byId(1)).Arm) {
         console.log('Partition is Armed State');
     } else {
         console.log('Partition is Disarmed State');
