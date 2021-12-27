@@ -17,11 +17,12 @@ export class RiscoDirectTCPSocket extends RiscoBaseSocket {
    * @return  {Promise}
    */
   override async connect(): Promise<boolean> {
+    this.disconnecting = false;
     this.socket = new Socket()
     this.socket.setTimeout(this.socketTimeout)
 
     this.socket.once('ready', async () => {
-      this.isConnected = true
+      this.isSocketConnected = true
       logger.log('verbose', `Socket Connected.`)
       await this.panelConnect()
     })
@@ -53,12 +54,7 @@ export class RiscoDirectTCPSocket extends RiscoBaseSocket {
    * @return  {Boolean}   true/false if connected or not
    */
   private async panelConnect(codeLength = 4): Promise<boolean> {
-    if (!this.isConnected) {
-      await this.connect()
-      // Wait 100ms for avoid slow connections
-      await new Promise(r => setTimeout(r, 100))
-    }
-    assertIsTrue(this.isConnected, 'IsConnected', 'Socket failed to connect after 100ms delay')
+    assertIsTrue(this.isSocketConnected, 'isConnected', 'Socket failed to connect after 100ms delay')
 
     logger.log('verbose', `Authenticating to the panel`)
     const rmtResponse = await this.sendCommand(`RMT=${this.panelPassword.toString().padStart(codeLength, '0')}`)
@@ -144,7 +140,6 @@ export class RiscoDirectTCPSocket extends RiscoBaseSocket {
 
     if (panelConnected) {
       logger.log('verbose', `Connection to the control panel successfully established.`)
-      this.isConnected = true
       this.emit('PanelConnected')
     } else {
       logger.log('error', `Unable to connect to the control panel.`)
@@ -161,19 +156,21 @@ export class RiscoDirectTCPSocket extends RiscoBaseSocket {
       return true
     }
     this.disconnecting = true
-    this.emit('Disconnected', allowReconnect)
-    if ((this.socket !== undefined) && (!this.socket.destroyed)) {
+    if (this.socket !== undefined && !this.socket.destroyed) {
       if (this.watchDogTimer) {
         clearTimeout(this.watchDogTimer)
       }
 
-      await this.sendCommand('DCN')
+      if (this.isSocketConnected) {
+        await this.sendCommand('DCN')
+      }
       this.socket.destroy()
       logger.log('debug', `Socket Destroyed.`)
       this.socket.removeAllListeners()
       this.socket = undefined
     }
-    this.isConnected = false
+    this.isSocketConnected = false
+    this.emit('Disconnected', allowReconnect)
     logger.log('debug', `Socket Disconnected.`)
     return true
   }

@@ -173,7 +173,7 @@ export class RiscoComm extends EventEmitter {
       await this.dataFromPanel(cmdId, data)
     })
 
-    this.tcpSocket.on('DataSent', async (data: string, sequence_Id: number) => {
+    this.tcpSocket.on('DataSent', async (sequence_Id: number, data: string) => {
       await this.DataFromPlugin(data, sequence_Id)
     })
 
@@ -195,19 +195,19 @@ export class RiscoComm extends EventEmitter {
       this.emit('PanelCommReady', this.panelInfo)
     })
 
-    this.tcpSocket.on('IncomingRemoteConnection', () => {
-      logger.log('debug', `Start of remote connection detected.`)
-      if (this.watchDogTimer !== undefined) {
-        clearTimeout(this.watchDogTimer)
-      }
-    })
-
-    this.tcpSocket.on('EndIncomingRemoteConnection', () => {
-      logger.log('debug', `Remote connection end detected.`)
-      if (this.tcpSocket?.isConnected) {
-        this.watchDog()
-      }
-    })
+    // this.tcpSocket.on('IncomingRemoteConnection', () => {
+    //   logger.log('debug', `Start of remote connection detected.`)
+    //   if (this.watchDogTimer !== undefined) {
+    //     clearTimeout(this.watchDogTimer)
+    //   }
+    // })
+    //
+    // this.tcpSocket.on('EndIncomingRemoteConnection', () => {
+    //   logger.log('debug', `Remote connection end detected.`)
+    //   if (this.tcpSocket?.isSocketConnected) {
+    //     this.watchDog()
+    //   }
+    // })
 
     await this.tcpSocket.connect()
   }
@@ -476,7 +476,7 @@ export class RiscoComm extends EventEmitter {
    */
   async disconnect() {
     this.isDisconnecting = true
-    if (this.tcpSocket && this.tcpSocket.isConnected) {
+    if (this.tcpSocket && this.tcpSocket.isSocketConnected) {
       await this.tcpSocket.disconnect(false)
     }
   }
@@ -734,7 +734,7 @@ export class RiscoComm extends EventEmitter {
    */
   watchDog() {
     this.watchDogTimer = setTimeout(async () => {
-      if (this.tcpSocket?.isConnected) {
+      if (this.tcpSocket?.isSocketConnected) {
         this.watchDog()
         if (!this.tcpSocket.inProg) {
           await this.tcpSocket.sendCommand(`CLOCK`)

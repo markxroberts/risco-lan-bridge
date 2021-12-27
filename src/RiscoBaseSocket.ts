@@ -33,12 +33,15 @@ import { EventEmitter } from 'events'
 import { logger } from './Logger'
 import { assertIsDefined, assertIsFalse, assertIsTrue } from './Assertions'
 import { RiscoCrypt } from './RiscoCrypt'
+import { TypedEmitter } from 'tiny-typed-emitter'
 
 interface RiscoSocketEvents {
   'BadCRCLimit': () => void
   'BadCRCData': () => void
-  'DataReceived': (command: string) => void
-  'DataSent': (command: string, sequenceId: number) => void
+  'DataReceived': (cmdId: number | null, command: string) => void
+  'DataSent': (sequenceId: number, command: string) => void
+  'Disconnected': (allowReconnect: boolean) => void
+  'PanelConnected': () => void
 }
 
 export interface SocketOptions {
@@ -56,7 +59,7 @@ export interface SocketOptions {
 
 export type SocketMode = 'direct' | 'proxy'
 
-export abstract class RiscoBaseSocket extends EventEmitter { // TypedEmitter<RiscoSocketEvents> {
+export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
 
   protected panelIp: string
   protected panelPort: number
@@ -69,7 +72,7 @@ export abstract class RiscoBaseSocket extends EventEmitter { // TypedEmitter<Ris
   socketTimeout!: number
   socket: Socket | undefined
 
-  isConnected = false
+  isSocketConnected = false
   inProg = false
   inCryptTest = false
   inPasswordGuess = false
@@ -84,6 +87,8 @@ export abstract class RiscoBaseSocket extends EventEmitter { // TypedEmitter<Ris
   private lastReceivedId: number | null = null
   private lastMisunderstoodData?: string
   protected cryptKeyValidity: boolean | undefined
+
+  protected commandResponseEmitter = new EventEmitter()
 
   protected constructor(socketOptions: SocketOptions, rcrypt: RiscoCrypt) {
     super()
@@ -134,7 +139,7 @@ export abstract class RiscoBaseSocket extends EventEmitter { // TypedEmitter<Ris
         this.cryptKeyValidity = isCRCOK
         // in crypto test, always return the result for analysis, event if CRC is KO
         logger.log('verbose', `Command[${receivedId}] inCryptTest enabled, emitting response without checks`)
-        this.emit(`CmdResponse_${this.sequenceId}`, receivedCommandStr)
+        this.commandResponseEmitter.emit(`CmdResponse_${this.sequenceId}`, receivedCommandStr)
         this.increaseSequenceId()
         continue
       } else {
@@ -158,14 +163,14 @@ export abstract class RiscoBaseSocket extends EventEmitter { // TypedEmitter<Ris
           logger.log('debug', `Command[${receivedId}] Command response from Panel`)
           if (receivedId == this.sequenceId) {
             logger.log('debug', `Command[${receivedId}] Emitting expected command response`)
-            this.emit(`CmdResponse_${receivedId}`, receivedCommandStr)
+            this.commandResponseEmitter.emit(`CmdResponse_${receivedId}`, receivedCommandStr)
             this.increaseSequenceId()
           } else {
             // Else, Unexpected response, we do not treat
             logger.log('warn', `Command[${receivedId}] Command response was unexpected, ignoring. Current sequenceId: ${this.sequenceId}`)
           }
         }
-        if (this.isConnected) {
+        if (this.isSocketConnected) {
           // Whether the data is expected or not, it is transmitted for analysis
           this.emit('DataReceived', receivedId, receivedCommandStr)
         }
@@ -189,7 +194,7 @@ export abstract class RiscoBaseSocket extends EventEmitter { // TypedEmitter<Ris
     this.badCRCCount++
     if (this.badCRCCount > this.badCRCLimit) {
       logger.log('error', `Command[${receivedId}] Too many bad CRC value.`)
-      this.emit('badCRCLimit')
+      this.emit('BadCRCLimit')
       await this.disconnect(true)
       return
     } else {
@@ -243,9 +248,9 @@ export abstract class RiscoBaseSocket extends EventEmitter { // TypedEmitter<Ris
    * @return  {Promise}
    */
   async sendCommand(commandStr: string, progCmd = false): Promise<string> {
-    assertIsDefined(this.socket, 'Socket')
-    assertIsFalse(this.socket.destroyed, 'Socket.destroyed', 'Socket is destroyed')
-    assertIsTrue(this.isConnected, 'IsConnected', 'Not connected')
+    assertIsDefined(this.socket,`socket`, `sendCommand(${commandStr}): socket is undefined`)
+    assertIsFalse(this.socket.destroyed, 'socket.destroyed', `sendCommand(${commandStr}): Socket is destroyed`)
+    assertIsTrue(this.isSocketConnected, 'isSocketConnected', `sendCommand(${commandStr}): Socket not connected`)
 
     const cmdId = this.sequenceId
 
@@ -290,13 +295,13 @@ export abstract class RiscoBaseSocket extends EventEmitter { // TypedEmitter<Ris
 
     try {
       this.socket.on('error', socketErrorHandler)
-      this.on(`CmdResponse_${cmdId}`, responseHandler)
+      this.commandResponseEmitter.on(`CmdResponse_${cmdId}`, responseHandler)
 
       const encryptedCmdBuffer = this.rCrypt.getCommandBuffer(commandStr, cmdId)
       this.socket.write(encryptedCmdBuffer)
 
       logger.log('debug', `Command[${cmdId}] written to socket`)
-      this.emit('DataSent', commandStr, this.sequenceId)
+      this.emit('DataSent', this.sequenceId, commandStr)
 
       const responseTimeout = setTimeout(() => {
         logger.log('warn', `Command[${cmdId}] '${commandStr}' Timeout`)
@@ -320,7 +325,7 @@ export abstract class RiscoBaseSocket extends EventEmitter { // TypedEmitter<Ris
       }
     } finally {
       this.socket.off('error', socketErrorHandler)
-      this.off(`CmdResponse_${cmdId}`, responseHandler)
+      this.commandResponseEmitter.off(`CmdResponse_${cmdId}`, responseHandler)
     }
 
     if (shouldRetry) {
