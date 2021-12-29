@@ -42,6 +42,8 @@ interface RiscoSocketEvents {
   'DataSent': (sequenceId: number, command: string) => void
   'Disconnected': (allowReconnect: boolean) => void
   'PanelConnected': () => void
+  'IncomingRemoteConnection': () => void
+  'EndIncomingRemoteConnection': () => void
 }
 
 export interface SocketOptions {
@@ -53,6 +55,7 @@ export interface SocketOptions {
   encoding: string,
   cloudUrl: string,
   cloudPort: number,
+  panelConnectionDelay: number,
   socketMode: SocketMode
 }
 
@@ -65,14 +68,13 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
   protected panelPort: number
   protected panelPassword: string
   protected guessPasswordAndPanelId: boolean
+  protected socketTimeout: number
   protected socketMode: SocketMode
 
-  protected rCrypt: RiscoCrypt
+  panelSocket: Socket | undefined
 
-  socketTimeout!: number
-  socket: Socket | undefined
-
-  isSocketConnected = false
+  isPanelSocketConnected = false
+  isPanelConnected = false;
   inProg = false
   inCryptTest = false
   inPasswordGuess = false
@@ -86,11 +88,11 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
   private lastReceivedBuffer?: Buffer
   private lastReceivedId: number | null = null
   private lastMisunderstoodData?: string
-  protected cryptKeyValidity: boolean | undefined
+  protected cryptKeyValidity = false
 
   protected commandResponseEmitter = new EventEmitter()
 
-  protected constructor(socketOptions: SocketOptions, rcrypt: RiscoCrypt) {
+  protected constructor(socketOptions: SocketOptions, protected rCrypt: RiscoCrypt) {
     super()
     this.socketMode = socketOptions.socketMode
 
@@ -98,7 +100,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
     this.panelPort = socketOptions.panelPort
     this.panelPassword = socketOptions.panelPassword
     this.guessPasswordAndPanelId = socketOptions.guessPasswordAndPanelId
-    this.rCrypt = rcrypt
+    this.socketTimeout = 30000
   }
 
   abstract connect(): Promise<boolean>
@@ -126,7 +128,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
       const stringedBuffer = this.getStringedBuffer(this.lastReceivedBuffer)
 
       logger.log('debug', `Received data Buffer : ${stringedBuffer}`)
-      const [receivedId, receivedCommandStr, isCRCOK] = this.rCrypt.DecodeMessage(subData)
+      const [receivedId, receivedCommandStr, isCRCOK] = this.rCrypt.decodeMessage(subData)
 
       if (this.lastReceivedId != null && this.lastReceivedId == receivedId) {
         logger.log('warn', `Command[${receivedId}] receivedId is the same as lastReceivedId, ignoring this panel message`)
@@ -167,10 +169,10 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
             this.increaseSequenceId()
           } else {
             // Else, Unexpected response, we do not treat
-            logger.log('warn', `Command[${receivedId}] Command response was unexpected, ignoring. Current sequenceId: ${this.sequenceId}`)
+            logger.log('warn', `Command[${receivedId}] Command response was unexpected, ignoring. Data[${receivedCommandStr}]. sequenceId[${this.sequenceId}]`)
           }
         }
-        if (this.isSocketConnected) {
+        if (this.isPanelSocketConnected) {
           // Whether the data is expected or not, it is transmitted for analysis
           this.emit('DataReceived', receivedId, receivedCommandStr)
         }
@@ -248,9 +250,9 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
    * @return  {Promise}
    */
   async sendCommand(commandStr: string, progCmd = false): Promise<string> {
-    assertIsDefined(this.socket,`socket`, `sendCommand(${commandStr}): socket is undefined`)
-    assertIsFalse(this.socket.destroyed, 'socket.destroyed', `sendCommand(${commandStr}): Socket is destroyed`)
-    assertIsTrue(this.isSocketConnected, 'isSocketConnected', `sendCommand(${commandStr}): Socket not connected`)
+    assertIsDefined(this.panelSocket,`panelSocket`, `sendCommand(${commandStr}): socket is undefined`)
+    assertIsFalse(this.panelSocket.destroyed, 'panelSocket.destroyed', `sendCommand(${commandStr}): Socket is destroyed`)
+    assertIsTrue(this.isPanelSocketConnected, 'isPanelSocketConnected', `sendCommand(${commandStr}): Socket not connected`)
 
     const cmdId = this.sequenceId
 
@@ -294,13 +296,13 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
     }
 
     try {
-      this.socket.on('error', socketErrorHandler)
+      this.panelSocket.on('error', socketErrorHandler)
       this.commandResponseEmitter.on(`CmdResponse_${cmdId}`, responseHandler)
 
       const encryptedCmdBuffer = this.rCrypt.getCommandBuffer(commandStr, cmdId)
-      this.socket.write(encryptedCmdBuffer)
+      this.panelSocket.write(encryptedCmdBuffer)
 
-      logger.log('debug', `Command[${cmdId}] written to socket`)
+      logger.log('debug', `Command[${cmdId}] Writing command buffer to socket: ${this.getStringedBuffer(encryptedCmdBuffer)}`)
       this.emit('DataSent', this.sequenceId, commandStr)
 
       const responseTimeout = setTimeout(() => {
@@ -324,7 +326,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
         }
       }
     } finally {
-      this.socket.off('error', socketErrorHandler)
+      this.panelSocket.off('error', socketErrorHandler)
       this.commandResponseEmitter.off(`CmdResponse_${cmdId}`, responseHandler)
     }
 
@@ -355,10 +357,10 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
    * @param   {String}    String matches Id
    */
   sendAck(Id: number): void {
-    assertIsDefined(this.socket, 'Socket')
+    assertIsDefined(this.panelSocket, 'Socket')
     logger.log('debug', `Command[${Id}] Sending Ack.`)
     const EncryptedCmd = this.rCrypt.getCommandBuffer('ACK', Id)
-    this.socket.write(EncryptedCmd)
+    this.panelSocket.write(EncryptedCmd)
   }
 
   /*
@@ -397,14 +399,17 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
    */
   async cryptTableTester(): Promise<[boolean, Buffer]> {
     const testCmd = `CUSTLST`
-    this.cryptKeyValidity = undefined
+    // this.cryptKeyValidity = undefined
     // To avoid false positives, this command provides a long response which
     // allows only few possible errors when calculating the CRC
-    const response = await this.sendCommand(`${testCmd}?`, false)
-    while (this.cryptKeyValidity === undefined) {
-      await new Promise(r => setTimeout(r, 10))
-    }
-    logger.log('debug', `Response crypt: ${response}`)
+    const maxAttempts = 3
+    let currentAttempt = 0
+    let response: string
+    do {
+      response = await this.sendCommand(`${testCmd}?`, false)
+      logger.log('debug', `cryptTableTester response: ${response}`)
+      currentAttempt++
+    } while (this.isErrorCode(response) && currentAttempt < maxAttempts)
     return [this.cryptKeyValidity && !this.isErrorCode(response), this.lastReceivedBuffer || Buffer.of()]
   }
 
@@ -522,4 +527,149 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
 
     }
   }
+
+  private async guessPassword(maxLength = 6): Promise<string | null> {
+    logger.log('debug', `Password is incorrect, trying to guess it`)
+    let foundPassword: string | null = null
+    if (maxLength >= 4) {
+      // Starting with 4 digits, as it is the most common password size
+      foundPassword = await this.guessPasswordForLength(4)
+      if (foundPassword) {
+        return foundPassword
+      }
+    }
+    let length = 1
+    do {
+      if (length !== 4) {
+        foundPassword = await this.guessPasswordForLength(length)
+        if (foundPassword) {
+          return foundPassword
+        }
+      }
+      length++
+    } while (length <= maxLength)
+    return null
+  }
+
+  private async guessPasswordForLength(length: number): Promise<string | null> {
+    const maxValueForLength = Math.pow(10, length) - 1;
+    let passwordAttempt = 0
+    logger.log('info', `Trying passwords from ` + passwordAttempt.toString().padStart(length, '0') + ' to ' + maxValueForLength.toString().padStart(length, '0') + '...')
+    do {
+      const paddedPwd = passwordAttempt.toString().padStart(length, '0')
+      if (passwordAttempt % 100 == 0) {
+        logger.log('info', `${paddedPwd} to ${(passwordAttempt+99).toString().padStart(length, '0')}...`)
+      }
+      const rmtSuccess = await this.getAckResult(`RMT=${paddedPwd}`)
+      if (rmtSuccess) {
+        return paddedPwd
+      }
+      passwordAttempt++
+    } while (passwordAttempt <= maxValueForLength)
+    return null
+  }
+
+  /*
+   * Panel connection mechanism.
+   * Send command RMT + Connection password
+   * Send LCL command
+   * After this point, the data is encrypted.
+   * @param   {Integer}   code length (between 1-6)
+   * @return  {Boolean}   true/false if connected or not
+   */
+  protected async panelConnect(codeLength = 4): Promise<boolean> {
+    assertIsTrue(this.isPanelSocketConnected, 'isPanelSocketConnected', 'Socket failed to connect after 100ms delay')
+
+    logger.log('verbose', `Authenticating to the panel`)
+    const rmtResponse = await this.sendCommand(`RMT=${this.panelPassword.toString().padStart(codeLength, '0')}`)
+    let authenticationOk = false
+    if (!rmtResponse.includes('ACK')) {
+      logger.log('warn', `Provided password is incorrect`)
+      if (this.isErrorCode(rmtResponse) && !this.disconnecting) {
+        if (this.guessPasswordAndPanelId) {
+          logger.log('info', `Trying to guess password (brut force)`)
+          this.inPasswordGuess = true
+          const foundPassword = await this.guessPassword()
+          this.inPasswordGuess = false
+          if (foundPassword !== null) {
+            logger.log('info', `Discovered Access Code : ${foundPassword}`)
+            this.panelPassword = foundPassword
+            authenticationOk = true
+          } else {
+            logger.log('error', `Unable to discover password`)
+          }
+        } else {
+          logger.log('error', `Password discovery is disabled`)
+        }
+      }
+      if (!authenticationOk) {
+        logger.log('error', `Not able to authenticate to the Panel, exiting`)
+        await this.disconnect(false)
+        return false
+      }
+    }
+
+    if (await this.getAckResult(`LCL`)) {
+      // Now, Encrypted channel is enabled
+      this.rCrypt.cryptCommands = true
+      logger.log('verbose', `Setting up encryption using Panel Id`)
+      await new Promise(r => setTimeout(r, 1000))
+      this.inCryptTest = true
+      const testerResult = await this.cryptTableTester()
+      let cryptResult = testerResult[0];
+      const cryptedResponseBuffer = testerResult[1];
+      if (!this.cryptKeyValidity) {
+        logger.log('warn', `Bad Panel Id: ${this.rCrypt.panelId}. Trying to find the right one`)
+        let possibleKey = 9999
+        do {
+          let isPossibleKey = false
+          do {
+            // Because the Buffer is modified by reference during decryption, a new Buffer is created on each attempt.
+            const testBufferData = Buffer.alloc(cryptedResponseBuffer.length)
+            cryptedResponseBuffer.copy(testBufferData)
+            this.rCrypt.updatePanelId(possibleKey)
+            const [receivedId, receivedCommandStr, isCRCOK] = this.rCrypt.decodeMessage(testBufferData)
+            if (receivedId == null && this.isErrorCode(receivedCommandStr) && isCRCOK) {
+              logger.log('info', `Panel Id is possible candidate : ${possibleKey}`)
+              isPossibleKey = true
+            } else {
+              logger.log('debug', `Panel Id is not: ${possibleKey}`)
+              isPossibleKey = false
+            }
+            possibleKey--
+          } while (possibleKey >= 0 && !isPossibleKey);
+
+          if (isPossibleKey) {
+            [cryptResult] = await this.cryptTableTester()
+            if (cryptResult) {
+              this.inCryptTest = false
+              logger.log('info', `Discovered Panel Id: ${this.rCrypt.panelId}`)
+              await new Promise(r => setTimeout(r, 1000))
+            } else {
+              logger.log('info', `Panel Id ${this.rCrypt.panelId} is incorrect`)
+            }
+          } else if (possibleKey < 0) {
+            logger.log('error', `No remaining possible Panel Id, abandon`)
+            this.inCryptTest = false
+          }
+        } while (this.inCryptTest)
+        // Empty buffer socket???
+        await new Promise(r => setTimeout(r, 2000))
+      }
+      this.inCryptTest = false
+      this.isPanelConnected = cryptResult
+    } else {
+      this.isPanelConnected = false
+    }
+
+    if (this.isPanelConnected) {
+      logger.log('verbose', `Connection to the control panel successfully established.`)
+      this.emit('PanelConnected')
+    } else {
+      logger.log('error', `Unable to connect to the control panel.`)
+      await this.disconnect(false)
+    }
+    return this.isPanelConnected
+  }
+
 }

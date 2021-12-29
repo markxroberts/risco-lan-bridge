@@ -34,12 +34,13 @@ import { Output, OutputList } from './Devices/Outputs'
 import { Zone, ZoneList } from './Devices/Zones'
 import { Partition, PartitionList } from './Devices/Partitions'
 import { MBSystem } from './Devices/System'
-import { EventEmitter } from 'events'
 import { assertIsDefined } from './Assertions'
 import { logger } from './Logger'
 import { PanelOptions } from './RiscoPanel'
 import { SocketOptions } from './RiscoBaseSocket'
 import { RiscoCrypt } from './RiscoCrypt'
+import { TypedEmitter } from 'tiny-typed-emitter'
+import { RiscoProxyTCPSocket } from './RiscoProxySocket'
 
 export class PanelInfo {
 
@@ -53,7 +54,16 @@ export class PanelInfo {
 
 }
 
-export class RiscoComm extends EventEmitter {
+interface RiscoCommEvents {
+  'PanelCommReady': (info: PanelInfo) => void
+  'NewOutputStatusFromPanel': (data: string) => void
+  'NewPartitionStatusFromPanel': (data: string) => void
+  'NewMBSystemStatusFromPanel': (data: string) => void
+  'NewZoneStatusFromPanel': (data: string) => void
+  'Clock': (data: string) => void
+}
+
+export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
 
   private readonly reconnectDelay: number
   private readonly watchDogInterval: number
@@ -91,7 +101,8 @@ export class RiscoComm extends EventEmitter {
       guessPasswordAndPanelId: options.guessPasswordAndPanelId !== undefined ? options.guessPasswordAndPanelId : true,
       listeningPort: options.listeningPort || 33000,
       cloudUrl: (options.cloudUrl || 'www.riscocloud.com'),
-      cloudPort: options.cloudPort || 33000
+      cloudPort: options.cloudPort || 33000,
+      panelConnectionDelay: options.panelConnectionDelay || 30000
     }
 
     this.reconnectDelay = 10000
@@ -101,10 +112,6 @@ export class RiscoComm extends EventEmitter {
     this.ntpPort = options.ntpPort || 123
     this.watchDogInterval = options.watchDogInterval || 5000
     this.GMT_TZ = RiscoComm.getGmtTimeZone();
-
-    if (this.socketOptions.socketMode == 'proxy') {
-      logger.log('warn', 'proxy mode is not supported for now')
-    }
   }
 
   private static getGmtTimeZone(): string {
@@ -140,8 +147,28 @@ export class RiscoComm extends EventEmitter {
     } else {
       logger.log('debug', `TCP Socket is not already created, Create It`)
 
-      this.tcpSocket = new RiscoDirectTCPSocket(this.socketOptions, this.rCrypt)
+      let tcpSocket: RiscoBaseSocket
+      if (this.socketOptions.socketMode === 'proxy') {
+        tcpSocket = new RiscoProxyTCPSocket(this.socketOptions, this.rCrypt)
+      } else {
+        tcpSocket = new RiscoDirectTCPSocket(this.socketOptions, this.rCrypt)
+      }
 
+      this.tcpSocket = tcpSocket
+
+      //   const cloudSocket = new RiscoCloudSocket(this.socketOptions, this.rCrypt)
+      //   cloudSocket.connect().then(() => {
+      //     cloudSocket.CloudSocket.on('connect', () => {
+      //       console.log('Cloud connected')
+      //       tcpSocket.socket?.on('data', (data) => {
+      //         if (data[1] === 19) {
+      //           logger.log('info', 'Forwarding encrypted data to cloud')
+      //           cloudSocket.write(data)
+      //         }
+      //       })
+      //     })
+      //   })
+      // }
       // switch (this.ProxyMode) {
       //     case 'proxy':
       //         this.tcpSocket = new ProxySocket(this.socketOptions);
@@ -158,6 +185,9 @@ export class RiscoComm extends EventEmitter {
     this.tcpSocket.once('Disconnected', (allowReconnect: boolean) => {
       if (this.isDisconnecting || !allowReconnect) {
         logger.log('info', `TCP Socket Disconnected`)
+        if (this.autoReconnectTimer !== undefined) {
+          clearTimeout(this.autoReconnectTimer)
+        }
       } else {
         logger.log('error', `TCP Socket Disconnected`)
         if (this.autoReconnectTimer === undefined) {
@@ -476,7 +506,7 @@ export class RiscoComm extends EventEmitter {
    */
   async disconnect() {
     this.isDisconnecting = true
-    if (this.tcpSocket && this.tcpSocket.isSocketConnected) {
+    if (this.tcpSocket && this.tcpSocket.isPanelSocketConnected) {
       await this.tcpSocket.disconnect(false)
     }
   }
@@ -512,10 +542,11 @@ export class RiscoComm extends EventEmitter {
    * @param   {zones}    ZoneList Object     Empty Object
    * @return  {zones}    ZoneList Object     Populated Object or new Object if fails
    */
-  async GetAllZonesData(zones: ZoneList): Promise<ZoneList> {
+  async GetAllZonesData(): Promise<ZoneList> {
     assertIsDefined(this.tcpSocket, 'tcpSocket')
     assertIsDefined(this.panelInfo, 'panelInfo')
     logger.log('debug', `Retrieving the configuration of the Zones.`)
+    const zones = new ZoneList(this.panelInfo.MaxZones, this)
     const MaxZ = this.panelInfo.MaxZones
     for (let i = 0; i < (MaxZ / 8); i++) {
       const min = (i * 8) + 1
@@ -584,10 +615,11 @@ export class RiscoComm extends EventEmitter {
    * @param   {OutputList}    OutputList Object     Empty Object
    * @return  {OutputList}    OutputList Object     Populated Object or new Object if fails
    */
-  async getAllOutputsData(outputs: OutputList): Promise<OutputList> {
+  async getAllOutputsData(): Promise<OutputList> {
     assertIsDefined(this.tcpSocket, 'tcpSocket')
     assertIsDefined(this.panelInfo, 'panelInfo')
     logger.log('debug', `Retrieving the configuration of the Outputs.`)
+    const outputs = new OutputList(this.panelInfo.MaxOutputs, this)
     const MaxO = this.panelInfo.MaxOutputs
     const groups = true
     if (groups) {
@@ -672,10 +704,11 @@ export class RiscoComm extends EventEmitter {
    * @param   {PartitionsList}    PartitionsList Object     Empty Object
    * @return  {PartitionsList}    PartitionsList Object     Populated Object or new Object if fails
    */
-  async getAllPartitionsData(partitions: PartitionList): Promise<PartitionList> {
+  async getAllPartitionsData(): Promise<PartitionList> {
     assertIsDefined(this.tcpSocket, 'tcpSocket')
     assertIsDefined(this.panelInfo, 'panelInfo')
     logger.log('debug', `Retrieving the configuration of the Partitions.`)
+    const partitions = new PartitionList(this.panelInfo.MaxParts, this)
     const MaxP = this.panelInfo.MaxParts
     for (let i = 0; i < (MaxP / 8); i++) {
       const min = (i * 8) + 1
@@ -734,7 +767,7 @@ export class RiscoComm extends EventEmitter {
    */
   watchDog() {
     this.watchDogTimer = setTimeout(async () => {
-      if (this.tcpSocket?.isSocketConnected) {
+      if (this.tcpSocket?.isPanelSocketConnected) {
         this.watchDog()
         if (!this.tcpSocket.inProg) {
           await this.tcpSocket.sendCommand(`CLOCK`)

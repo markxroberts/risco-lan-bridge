@@ -27,7 +27,7 @@
 
 'use strict';
 
-import {CRCArray_base64} from "./constants";
+import { CRCArray_base64 } from './constants'
 import { logger } from './Logger'
 
 export interface RiscoCryptOptions {
@@ -62,15 +62,14 @@ export class RiscoCrypt {
 
     /**
      * Decode received message and extract Command id, command and CRC Value
-     * @param    {string}    Message
+     * @param    {string}    message
      * @return    {number}    Command Id
      *            {string}    Command itself
      *            {boolean}    IsValidCRC
      */
-    DecodeMessage(Message: Buffer): [number | null, string, boolean] {
-        const cryptoContext = new CryptoContext();
-        this.cryptCommands = Message[1] == 17;
-        const DecryptedMsgBytes = this.DecryptChars(Message, cryptoContext);
+    decodeMessage(message: Buffer): [number | null, string, boolean] {
+        this.cryptCommands = RiscoCrypt.isCrypted(message);
+        const DecryptedMsgBytes = this.decryptChars(message);
         const DecryptedMessage = this.byteToString(DecryptedMsgBytes);
         let cmd_id, Command, CRCValue;
         if (DecryptedMessage.startsWith('N') || DecryptedMessage.startsWith('B')) {
@@ -100,29 +99,19 @@ export class RiscoCrypt {
      *
      */
     getCommandBuffer(Command: string, CmdId: number, ForceCrypt?: boolean | undefined): Buffer {
-        const cryptoContext = new CryptoContext();
         //byte = 2 => start of Command
         let Encrypted = [2];
-        if (ForceCrypt === undefined) {
-            if (this.cryptCommands) {
-                //byte = 17 => encryption indicator
-                Encrypted = Encrypted.concat([17]);
-            }
-        } else {
-            if (ForceCrypt) {
-                //byte = 17 => encryption indicator
-                Encrypted = Encrypted.concat([17]);
-            }
+        if ((ForceCrypt === undefined && this.cryptCommands) || ForceCrypt) {
+            //byte = 17 => encryption indicator
+            Encrypted = Encrypted.concat([17]);
         }
         //Add Cmd_Id to Command and Separator character between Cmd and CRC value
         const FullCmd = ''.concat(CmdId.toLocaleString('en-US', { minimumIntegerDigits: 2, useGrouping: false }), Command, Buffer.from([23]).toString());
-        const CommandBytes = this.stringToByte(FullCmd);
-        //Encrypt Command
-        Encrypted = Encrypted.concat(this.EncryptChars(FullCmd, cryptoContext));
         //Calculate CRC
-        const CRCValue = this.getCommandCRC(CommandBytes);
-        //Add Encrypted CRC Chars
-        Encrypted = Encrypted.concat(this.EncryptChars(CRCValue, cryptoContext));
+        const CRCValue = this.getCommandCRC(FullCmd);
+        //Encrypt Command
+        Encrypted = Encrypted.concat(this.encryptChars(FullCmd.concat(CRCValue)));
+
         //Add Terminal Char
         Encrypted = Encrypted.concat([3]);
         return Buffer.from(Encrypted);
@@ -183,7 +172,7 @@ export class RiscoCrypt {
     private IsValidCRC(CmdId: number | null, UnCryptedMessage: string, RcvCRC: string): boolean {
         const StrNoCRC = UnCryptedMessage.substring(0, UnCryptedMessage.indexOf(String.fromCharCode(23)) + 1);
 
-        const MsgCRC = this.getCommandCRC(this.stringToByte(StrNoCRC));
+        const MsgCRC = this.getCommandCRC(StrNoCRC);
         logger.log('debug', `Command[${CmdId}] CRC Value : ${MsgCRC}`);
         if (RcvCRC == MsgCRC) {
             logger.log('debug', `Command[${CmdId}] CRC Ok`);
@@ -197,34 +186,33 @@ export class RiscoCrypt {
     /**
      * Calculate CRC for Command based on original character(not encrypted)
      * and CRC array Value
-     * @param    {Buffer}    CmdBytes
-     * @return    {string}    resultCRC
      */
-    private getCommandCRC(CmdBytes: Buffer) {
+    private getCommandCRC(cmdStr: string): string {
+        const CmdBytes = this.stringToByte(cmdStr)
         let CRCBase = 65535;
         for (let i = 0; i < CmdBytes.length; i++) {
             CRCBase = CRCBase >>> 8 ^ this.CRCArray[CRCBase & 255 ^ CmdBytes[i]];
         }
 
-        const resultCRC = ''.concat(
-            (CRCBase >>> 12 & 15).toString(16).toUpperCase(),
-            ((CRCBase >>> 8) & 15).toString(16).toUpperCase(),
-            ((CRCBase >>> 4) & 15).toString(16).toUpperCase(),
-            ((CRCBase & 15).toString(16).toUpperCase())
+        return ''.concat(
+          (CRCBase >>> 12 & 15).toString(16).toUpperCase(),
+          ((CRCBase >>> 8) & 15).toString(16).toUpperCase(),
+          ((CRCBase >>> 4) & 15).toString(16).toUpperCase(),
+          ((CRCBase & 15).toString(16).toUpperCase())
         );
-        return resultCRC;
     }
 
     /**
-     * Encryption/Decryption mechanisc
+     * Encryption/Decryption mechanism
      */
-    private EncryptChars(charsCmd: string, cryptoContext: CryptoContext): number[] {
+    private encryptChars(charsCmd: string): number[] {
         const offset = 0;
         let cryptedChars: number[] = [];
+        let position = 0
         const chars = Buffer.from(charsCmd, this.encoding);
         for (let i = 0; i < chars.length; i++) {
             if (this.cryptCommands) {
-                chars[i] ^= this.cryptBuffer[cryptoContext.position - offset];
+                chars[i] ^= this.cryptBuffer[position - offset];
             }
             switch (chars[i]) {
                 case 2:
@@ -233,7 +221,7 @@ export class RiscoCrypt {
                     cryptedChars = cryptedChars.concat([16]);
             }
             cryptedChars = cryptedChars.concat([chars[i]]);
-            cryptoContext.position++;
+            position++;
         }
         return cryptedChars;
     }
@@ -241,28 +229,30 @@ export class RiscoCrypt {
     /**
      * Decryption mechanism
      */
-    private DecryptChars(charsCmd: Buffer, cryptoContext: CryptoContext): Buffer {
+    private decryptChars(charsCmd: Buffer): Buffer {
+        const decrypt = RiscoCrypt.isCrypted(charsCmd)
         let offset = 0;
         let cryptedChars: number[] = [];
+        let position = 0;
         const chars = charsCmd;
-        for (let i = (this.cryptCommands ? 2 : 1); i < chars.length - 1; i++) {
-            if (this.cryptCommands) {
+        for (let i = (decrypt ? 2 : 1); i < chars.length - 1; i++) {
+            if (decrypt) {
                 if ((chars[i] == 16) && (chars[i + 1] == 2 || chars[i + 1] == 3 || chars[i + 1] == 16)) {
                     offset++;
                 } else {
-                    chars[i] ^= this.cryptBuffer[cryptoContext.position - offset];
+                    chars[i] ^= this.cryptBuffer[position - offset];
                 }
             }
             if (chars[i] != 16) {
                 cryptedChars = cryptedChars.concat([chars[i]]);
             }
-            cryptoContext.position++;
+            position++;
         }
         return Buffer.from(cryptedChars);
     }
 
-}
+    private static isCrypted(data: Buffer): boolean {
+        return data[1] == 17
+    }
 
-class CryptoContext {
-    position = 0
 }

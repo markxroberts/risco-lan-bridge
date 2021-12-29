@@ -166,8 +166,8 @@ export const TimeZoneStr: { [code: number] : string } = Object.freeze({
 export const RiscoError: { [code: string] : string } = Object.freeze({
     BCK2: 'Callback Error',
     N01: 'Error',
-    N02: 'Unknow Error N02',
-    N03: 'Unknow Error N03',
+    N02: 'Unknown Error N02',
+    N03: 'Unknown Error N03',
     N04: 'CRC Error',
     N05: 'Invalid parameter',
     N06: 'Invalid Value',

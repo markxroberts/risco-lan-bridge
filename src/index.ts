@@ -1,4 +1,5 @@
 export * from "./RiscoPanel"
+export * from "./RiscoBaseSocket"
 export * from "./RiscoComm"
 export * from "./Logger"
 export * from "./Devices/Outputs"

@@ -30,11 +30,11 @@
 import {LogLevel} from "./constants";
 
 export interface RiscoLogger {
-    log(log_lvl: LogLevel, log_data: any): void
+    log(log_lvl: LogLevel, log_data: unknown): void
 }
 
 class DefaultLogger implements RiscoLogger {
-    log(log_lvl: LogLevel, log_data: any): void {
+    log(log_lvl: LogLevel, log_data: unknown): void {
         const ts = new Date().toISOString()
         const logMessage = `${ts} ${log_data}`
         switch (log_lvl) {
@@ -62,7 +62,7 @@ class DelegatingLogger implements RiscoLogger {
     constructor(public delegate: RiscoLogger) {
     }
 
-    log(log_lvl: LogLevel, log_data: any) {
+    log(log_lvl: LogLevel, log_data: unknown) {
         this.delegate.log(log_lvl, log_data);
     }
 

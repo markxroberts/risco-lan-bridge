@@ -27,7 +27,7 @@
 
 'use strict'
 
-import { PanelInfo, RiscoComm } from './RiscoComm'
+import { RiscoComm } from './RiscoComm'
 import { logger, RiscoLogger } from './Logger'
 import { Zone, ZoneList } from './Devices/Zones'
 import { OutputList } from './Devices/Outputs'
@@ -48,6 +48,7 @@ export interface PanelOptions {
   listeningPort?: number,
   cloudUrl?: string,
   cloudPort?: number,
+  panelConnectionDelay?: number,
   encoding?: BufferEncoding,
   socketMode?: SocketMode,
   ntpServer?: string,
@@ -70,17 +71,12 @@ export class RiscoPanel extends EventEmitter {
     }
     this.riscoComm = new RiscoComm(options)
 
-    this.riscoComm.on('PanelCommReady', async (panelInfo: PanelInfo) => {
-      this.mbSystem = new MBSystem('', '---------------------')
-      this.zones = new ZoneList(panelInfo.MaxZones, this.riscoComm)
-      this.outputs = new OutputList(panelInfo.MaxOutputs, this.riscoComm)
-      this.partitions = new PartitionList(panelInfo.MaxParts, this.riscoComm)
-
+    this.riscoComm.on('PanelCommReady', async () => {
       logger.log('debug', `Beginning of device discovery.`)
       this.mbSystem = await this.riscoComm.getSystemData()
-      this.zones = await this.riscoComm.GetAllZonesData(this.zones)
-      this.outputs = await this.riscoComm.getAllOutputsData(this.outputs)
-      this.partitions = await this.riscoComm.getAllPartitionsData(this.partitions)
+      this.zones = await this.riscoComm.GetAllZonesData()
+      this.outputs = await this.riscoComm.getAllOutputsData()
+      this.partitions = await this.riscoComm.getAllPartitionsData()
       logger.log('debug', `End of device discovery.`)
 
       this.mbSystem.on('SStatusChanged', (EventStr: string) => {
@@ -109,13 +105,13 @@ export class RiscoPanel extends EventEmitter {
         }
       })
       this.zones.on('ZStatusChanged', (Id: number, EventStr: string) => {
-        logger.log('debug', `Zones Status Changed :\n Zone Id ${Id}\n New Status: ${EventStr}`)
+        logger.log('debug', `Zones Status Changed : Zone Id ${Id}, New Status: ${EventStr}`)
       })
       this.outputs.on('OStatusChanged', (Id: number, EventStr: string) => {
-        logger.log('debug', `Outputs Status Changed :\n Output Id ${Id}\n New Status: ${EventStr}`)
+        logger.log('debug', `Outputs Status Changed : Output Id ${Id}, New Status: ${EventStr}`)
       })
       this.partitions.on('PStatusChanged', (Id: number, EventStr: string) => {
-        logger.log('debug', `Partition Status Changed :\n Partition Id ${Id}\n New Status: ${EventStr}`)
+        logger.log('debug', `Partition Status Changed : Partition Id ${Id}, New Status: ${EventStr}`)
       })
 
       // Listen Event for new Status from Panel
@@ -126,25 +122,19 @@ export class RiscoPanel extends EventEmitter {
         }
       })
       this.riscoComm.on('NewOutputStatusFromPanel', (data) => {
-        if (this.outputs !== undefined) {
-          const OId = parseInt(data.substring(data.indexOf('OSTT') + 4, data.indexOf('=')), 10)
-          if (!isNaN(OId)) {
-            this.outputs.byId(OId).Status = data.substring(data.indexOf('=') + 1)
-          }
+        const OId = parseInt(data.substring(data.indexOf('OSTT') + 4, data.indexOf('=')), 10)
+        if (!isNaN(OId)) {
+          this.outputs.byId(OId).Status = data.substring(data.indexOf('=') + 1)
         }
       })
       this.riscoComm.on('NewPartitionStatusFromPanel', (data) => {
-        if (this.partitions !== undefined) {
-          const PId = parseInt(data.substring(data.indexOf('PSTT') + 4, data.indexOf('=')), 10)
-          if (!isNaN(PId)) {
-            this.partitions.byId(PId).Status = data.substring(data.indexOf('=') + 1)
-          }
+        const PId = parseInt(data.substring(data.indexOf('PSTT') + 4, data.indexOf('=')), 10)
+        if (!isNaN(PId)) {
+          this.partitions.byId(PId).Status = data.substring(data.indexOf('=') + 1)
         }
       })
       this.riscoComm.on('NewMBSystemStatusFromPanel', (data) => {
-        if (this.mbSystem !== undefined) {
-          this.mbSystem.Status = data.substring(data.indexOf('=') + 1)
-        }
+        this.mbSystem.Status = data.substring(data.indexOf('=') + 1)
       })
 
       // Finally, system is ready
@@ -226,8 +216,8 @@ export class RiscoPanel extends EventEmitter {
 
   /**
    * Disarm the selected partition
-   * @param   {Integer}     id          id Of selected PArtition
-   * @return  {Boolean}
+   * @param   id Identifier of selected Partition
+   * @return  true if success
    */
   async disarmPart(id: number): Promise<boolean> {
     logger.log('debug', `Request for Disarming a Partition.`)
@@ -245,8 +235,8 @@ export class RiscoPanel extends EventEmitter {
 
   /**
    * Bypass or UnBypass the selected Zone
-   * @param   {id}     id Of selected Zone
-   * @return  {Boolean}
+   * @param   id     id Of selected Zone
+   * @return  boolean
    */
   async toggleBypassZone(id: number): Promise<boolean> {
     logger.log('debug', `Request for Bypassing/UnBypassing a Zone.`)
