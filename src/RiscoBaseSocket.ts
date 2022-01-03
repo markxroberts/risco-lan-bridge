@@ -251,8 +251,14 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
    */
   async sendCommand(commandStr: string, progCmd = false): Promise<string> {
     assertIsDefined(this.panelSocket,`panelSocket`, `sendCommand(${commandStr}): socket is undefined`)
-    assertIsFalse(this.panelSocket.destroyed, 'panelSocket.destroyed', `sendCommand(${commandStr}): Socket is destroyed`)
-    assertIsTrue(this.isPanelSocketConnected, 'isPanelSocketConnected', `sendCommand(${commandStr}): Socket not connected`)
+    if (this.panelSocket.destroyed) {
+      logger.log('warn', `sendCommand(${commandStr}): Socket is destroyed, ignoring command`)
+      return ''
+    }
+    if (!this.isPanelSocketConnected) {
+      logger.log('warn', `sendCommand(${commandStr}): Socket not connected, ignoring command`)
+      return ''
+    }
 
     const cmdId = this.sequenceId
 
