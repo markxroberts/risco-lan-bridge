@@ -16,6 +16,7 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
   private readonly cloudSocketTimeout: number
   private readonly panelConnectionDelay: number
 
+  private panelConnectTimer?: NodeJS.Timeout
   private cloudConnectionRetryTimer?: NodeJS.Timeout
   private cloudConnected = false
   private isCloudSocketConnected = false
@@ -164,9 +165,17 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
     if (this.isCloudSocketConnected && this.isPanelSocketConnected && !this.isPanelConnected && !this.isPanelConnecting) {
       logger.log('info', `Setting a timer for panel connection in ${this.panelConnectionDelay} ms`)
       this.isPanelConnecting = true
-      setTimeout(async () => {
+      if (this.panelConnectTimer) {
+        clearTimeout(this.panelConnectTimer)
+      }
+      this.panelConnectTimer = setTimeout(async () => {
+        this.isPanelConnecting = false
+        if (this.isPanelSocketConnected) {
           await this.panelConnect()
-          this.isPanelConnecting = false
+        }
+        else {
+          logger.log('warn', `Panel Socket not connected, aborting panel connection sequence`)
+        }
           // setTimeout(() => {
           //   this.panelSocket?.destroy(new Error('Fake panel error event'))
           // }, 30000)
