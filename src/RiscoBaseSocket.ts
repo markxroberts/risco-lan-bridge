@@ -31,7 +31,7 @@ import { Socket } from 'net'
 import { RiscoError } from './constants'
 import { EventEmitter } from 'events'
 import { logger } from './Logger'
-import { assertIsDefined, assertIsFalse, assertIsTrue } from './Assertions'
+import { assertIsDefined, assertIsTrue } from './Assertions'
 import { RiscoCrypt } from './RiscoCrypt'
 import { TypedEmitter } from 'tiny-typed-emitter'
 
@@ -184,12 +184,6 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
       }
     } while (data.includes(DataSeparator) && !this.disconnecting)
 
-    // if (this.socketMode === 'direct') {
-    //     // We go back to 'listening' mode
-    //     this.Socket.once('data', (new_input_data: any) => {
-    //         this.NewDataHandler(new_input_data);
-    //     });
-    // }
   }
 
   private async onCommandBadCrc(receivedId: number | null) {
@@ -250,7 +244,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
    * @return  {Promise}
    */
   async sendCommand(commandStr: string, progCmd = false): Promise<string> {
-    assertIsDefined(this.panelSocket,`panelSocket`, `sendCommand(${commandStr}): socket is undefined`)
+    assertIsDefined(this.panelSocket, `panelSocket`, `sendCommand(${commandStr}): socket is undefined`)
     if (this.panelSocket.destroyed) {
       logger.log('warn', `sendCommand(${commandStr}): Socket is destroyed, ignoring command`)
       return ''
@@ -394,29 +388,8 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
   /**
    * Convert Buffer to string representation
    */
-  getStringedBuffer(data: Buffer): string {
+  protected getStringedBuffer(data: Buffer): string {
     return `[${data.join(',')}]`
-  }
-
-  /*
-   *  Function used to test the encryption table.
-   *  If the result does not match, it means that the panel Id is not the correct one
-   * and that it must be determined (provided that the option is activated).
-   */
-  async cryptTableTester(): Promise<[boolean, Buffer]> {
-    const testCmd = `CUSTLST`
-    // this.cryptKeyValidity = undefined
-    // To avoid false positives, this command provides a long response which
-    // allows only few possible errors when calculating the CRC
-    const maxAttempts = 3
-    let currentAttempt = 0
-    let response: string
-    do {
-      response = await this.sendCommand(`${testCmd}?`, false)
-      logger.log('debug', `cryptTableTester response: ${response}`)
-      currentAttempt++
-    } while (this.isErrorCode(response) && currentAttempt < maxAttempts)
-    return [this.cryptKeyValidity && !this.isErrorCode(response), this.lastReceivedBuffer || Buffer.of()]
   }
 
   /*
@@ -564,7 +537,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
     do {
       const paddedPwd = passwordAttempt.toString().padStart(length, '0')
       if (passwordAttempt % 100 == 0) {
-        logger.log('info', `${paddedPwd} to ${(passwordAttempt+99).toString().padStart(length, '0')}...`)
+        logger.log('info', `${paddedPwd} to ${(passwordAttempt + 99).toString().padStart(length, '0')}...`)
       }
       const rmtSuccess = await this.getAckResult(`RMT=${paddedPwd}`)
       if (rmtSuccess) {
@@ -617,54 +590,13 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
 
     if (await this.getAckResult(`LCL`)) {
       // Now, Encrypted channel is enabled
+      logger.log('debug', `LCL command result OK`)
       this.rCrypt.cryptCommands = true
       logger.log('verbose', `Setting up encryption using Panel Id`)
-      await new Promise(r => setTimeout(r, 1000))
-      this.inCryptTest = true
-      const testerResult = await this.cryptTableTester()
-      let cryptResult = testerResult[0];
-      const cryptedResponseBuffer = testerResult[1];
-      if (!this.cryptKeyValidity) {
-        logger.log('warn', `Bad Panel Id: ${this.rCrypt.panelId}. Trying to find the right one`)
-        let possibleKey = 9999
-        do {
-          let isPossibleKey = false
-          do {
-            // Because the Buffer is modified by reference during decryption, a new Buffer is created on each attempt.
-            const testBufferData = Buffer.alloc(cryptedResponseBuffer.length)
-            cryptedResponseBuffer.copy(testBufferData)
-            this.rCrypt.updatePanelId(possibleKey)
-            const [receivedId, receivedCommandStr, isCRCOK] = this.rCrypt.decodeMessage(testBufferData)
-            if (receivedId == null && this.isErrorCode(receivedCommandStr) && isCRCOK) {
-              logger.log('info', `Panel Id is possible candidate : ${possibleKey}`)
-              isPossibleKey = true
-            } else {
-              logger.log('debug', `Panel Id is not: ${possibleKey}`)
-              isPossibleKey = false
-            }
-            possibleKey--
-          } while (possibleKey >= 0 && !isPossibleKey);
-
-          if (isPossibleKey) {
-            [cryptResult] = await this.cryptTableTester()
-            if (cryptResult) {
-              this.inCryptTest = false
-              logger.log('info', `Discovered Panel Id: ${this.rCrypt.panelId}`)
-              await new Promise(r => setTimeout(r, 1000))
-            } else {
-              logger.log('info', `Panel Id ${this.rCrypt.panelId} is incorrect`)
-            }
-          } else if (possibleKey < 0) {
-            logger.log('error', `No remaining possible Panel Id, abandon`)
-            this.inCryptTest = false
-          }
-        } while (this.inCryptTest)
-        // Empty buffer socket???
-        await new Promise(r => setTimeout(r, 2000))
-      }
-      this.inCryptTest = false
-      this.isPanelConnected = cryptResult
+      // await new Promise(r => setTimeout(r, 1000))
+      this.isPanelConnected = await this.cryptoTest()
     } else {
+      logger.log('debug', `LCL command result KO`)
       this.isPanelConnected = false
     }
 
@@ -676,6 +608,74 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
       await this.disconnect(false)
     }
     return this.isPanelConnected
+  }
+
+  private async cryptoTest(): Promise<boolean> {
+    this.inCryptTest = true
+    const testerResult = await this.sendCryptTableTesterCmd()
+    let cryptResult = testerResult[0];
+    const cryptedResponseBuffer = testerResult[1];
+    if (!this.cryptKeyValidity) {
+      logger.log('warn', `Bad Panel Id: ${this.rCrypt.panelId}. Trying to find the right one`)
+      let possibleKey = 9999
+      do {
+        let isPossibleKey = false
+        do {
+          // Because the Buffer is modified by reference during decryption, a new Buffer is created on each attempt.
+          const testBufferData = Buffer.alloc(cryptedResponseBuffer.length)
+          cryptedResponseBuffer.copy(testBufferData)
+          this.rCrypt.updatePanelId(possibleKey)
+          const [receivedId, receivedCommandStr, isCRCOK] = this.rCrypt.decodeMessage(testBufferData)
+          if (receivedId == null && this.isErrorCode(receivedCommandStr) && isCRCOK) {
+            logger.log('info', `Panel Id is possible candidate : ${possibleKey}`)
+            isPossibleKey = true
+          } else {
+            logger.log('debug', `Panel Id is not: ${possibleKey}`)
+            isPossibleKey = false
+          }
+          possibleKey--
+        } while (possibleKey >= 0 && !isPossibleKey);
+
+        if (isPossibleKey) {
+          [cryptResult] = await this.sendCryptTableTesterCmd()
+          if (cryptResult) {
+            this.inCryptTest = false
+            logger.log('info', `Discovered Panel Id: ${this.rCrypt.panelId}`)
+            await new Promise(r => setTimeout(r, 1000))
+          } else {
+            logger.log('info', `Panel Id ${this.rCrypt.panelId} is incorrect`)
+          }
+        } else if (possibleKey < 0) {
+          logger.log('error', `No remaining possible Panel Id, abandon`)
+          this.inCryptTest = false
+        }
+      } while (this.inCryptTest)
+      // Empty buffer socket???
+      // await new Promise(r => setTimeout(r, 2000))
+    }
+    this.inCryptTest = false
+    return cryptResult
+  }
+
+   /*
+   *  Function used to test the encryption table.
+   *  If the result does not match, it means that the panel Id is not the correct one
+   * and that it must be determined (provided that the option is activated).
+   */
+   private async sendCryptTableTesterCmd(): Promise<[boolean, Buffer]> {
+    const testCmd = `CUSTLST`
+    // this.cryptKeyValidity = undefined
+    // To avoid false positives, this command provides a long response which
+    // allows only few possible errors when calculating the CRC
+    const maxAttempts = 3
+    let currentAttempt = 0
+    let response: string
+    do {
+      response = await this.sendCommand(`${testCmd}?`, false)
+      logger.log('debug', `cryptTableTester response: ${response}`)
+      currentAttempt++
+    } while (this.isErrorCode(response) && currentAttempt < maxAttempts)
+    return [this.cryptKeyValidity && !this.isErrorCode(response), this.lastReceivedBuffer || Buffer.of()]
   }
 
 }
