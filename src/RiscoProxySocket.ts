@@ -111,7 +111,7 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
   }
 
   private async initCloudSocket(): Promise<boolean> {
-    return new Promise((resolve, _) => {
+    return new Promise((resolve) => {
       this.cloudSocket.removeAllListeners()
       this.cloudSocket.setTimeout(this.cloudSocketTimeout)
       this.cloudSocket.on('error', (error) => {
