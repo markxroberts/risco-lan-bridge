@@ -86,9 +86,18 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
 
   constructor(options: PanelOptions) {
     super()
-
+    let panelId = 1
+    if (options.panelId != null) {
+      if (typeof options.panelId == 'string') {
+        panelId = parseInt(options.panelId, 10)
+      }
+      else {
+        panelId = options.panelId
+      }
+    }
+    
     this.rCrypt = new RiscoCrypt({
-      panelId: options.panelId || 1,
+      panelId: panelId,
       encoding: options.encoding || 'utf-8'
     })
 
