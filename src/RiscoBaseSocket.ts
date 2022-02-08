@@ -672,7 +672,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
     let response: string
     do {
       response = await this.sendCommand(`${testCmd}?`, false)
-      logger.log('debug', `cryptTableTester response: ${response}`)
+      logger.log('debug', `cryptTableTester response: ${response}, attempt: ${currentAttempt}`)
       currentAttempt++
     } while (this.isErrorCode(response) && currentAttempt < maxAttempts)
     return [this.cryptKeyValidity && !this.isErrorCode(response), this.lastReceivedBuffer || Buffer.of()]
