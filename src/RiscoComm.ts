@@ -708,7 +708,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
       for (let j = 0; j < (max - min + 1); j++) {
         const Item = partitions.byId(min + j)
         Item.Id = min + j
-        Item.Label = PLabels[j].trim()
+        Item.Label = (PLabels[j] || '').trim()
         Item.Status = PStatus[j]
       }
     }
