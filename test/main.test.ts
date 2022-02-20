@@ -23,9 +23,19 @@ describe('Panel test', () => {
           // type of events received and the action to be taken.
           console.log('System init => Done')
 
-          panel.disconnect().then(() => {
-            resolve(true)
+          panel.partitions.on('PStatusChanged', (Id, EventStr) => {
+            console.log(`PStatusChanged: ${Id} ${EventStr}`)
           })
+
+          panel.zones.on('ZStatusChanged', (Id, EventStr) => {
+            console.log(`ZStatusChanged: ${Id} ${EventStr}`)
+          })
+
+          setTimeout(() => {
+            panel.disconnect().then(() => {
+              resolve(true)
+            })
+          }, 30000)
         });
       } catch (e) {
         console.log('config.json parsing error', e)
