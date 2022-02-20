@@ -255,7 +255,21 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
 
   async applyPanelOptions(panelType: string): Promise<PanelInfo> {
     const firmwareVersion = await this.GetPanelFwVersion(panelType)
-    switch (panelType) {
+    let panelModelCode = panelType
+    if (panelType.indexOf(':') !== -1) {
+      panelModelCode = panelType.substring(0, panelType.indexOf(':'))
+    }
+    switch (panelModelCode) {
+      case PanelType.RW032:
+        return {
+          PanelType: panelType,
+          PanelModel: 'Agility 4',
+          PanelFW: firmwareVersion,
+          MaxZones: 32,
+          MaxParts: 3,
+          MaxOutputs: 4,
+          SupportPirCam: false
+        }
       case PanelType.RW132:
         return {
           PanelType: panelType,
