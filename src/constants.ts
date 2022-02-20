@@ -32,19 +32,12 @@ export const CRCArray_base64 = 'WzAsNDkzNDUsNDk1MzcsMzIwLDQ5OTIxLDk2MCw2NDAsNDk3
 
 // Type of Panel
 export enum PanelType {
-    RW132= 'RW132',
-    RW232 ='RW232',
+    RW132 = 'RW132',
+    RW232 = 'RW232',
     RW332 = 'RW332',
     RP432 = 'RP432',
     RP512 = 'RP512'
 }
-// export const PanelType: { [code: string] : number } = Object.freeze({
-//     'RW132',
-//     'RW232',
-//     'RW332':3,
-//     'RP432':4,
-//     'RP512':5
-// });
 
 export type LogLevel = 'error' | 'warn' | 'info' | 'verbose' | 'debug';
 

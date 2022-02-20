@@ -164,30 +164,6 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
       }
 
       this.tcpSocket = tcpSocket
-
-      //   const cloudSocket = new RiscoCloudSocket(this.socketOptions, this.rCrypt)
-      //   cloudSocket.connect().then(() => {
-      //     cloudSocket.CloudSocket.on('connect', () => {
-      //       console.log('Cloud connected')
-      //       tcpSocket.socket?.on('data', (data) => {
-      //         if (data[1] === 19) {
-      //           logger.log('info', 'Forwarding encrypted data to cloud')
-      //           cloudSocket.write(data)
-      //         }
-      //       })
-      //     })
-      //   })
-      // }
-      // switch (this.ProxyMode) {
-      //     case 'proxy':
-      //         this.tcpSocket = new ProxySocket(this.socketOptions);
-      //         break;
-      //     case 'rs232':
-      //     case 'direct':
-      //     default:
-      //         this.tcpSocket = new DirectSocket(this.socketOptions);
-      //         break;
-      // }
     }
     logger.log('debug', `TCP Socket must be created now`)
 
@@ -218,7 +194,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
 
     this.tcpSocket.on('PanelConnected', async () => {
       logger.log('debug', `Risco Panel Connected.`)
-      const panelType = await this.GetPanel_Type()
+      const panelType = await this.getPanelType()
       this.panelInfo = await this.applyPanelOptions(panelType)
 
       logger.log('info', `Panel info: ${this.panelInfo.PanelModel}/${this.panelInfo.PanelType}, FW ${this.panelInfo.PanelFW || 'Unknown'}`)
@@ -311,7 +287,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
   /*
    * Retrieve and store the panel type
    */
-  async GetPanel_Type(): Promise<string> {
+  async getPanelType(): Promise<string> {
     assertIsDefined(this.tcpSocket, 'tcpSocket')
     let PType = undefined
     do {
