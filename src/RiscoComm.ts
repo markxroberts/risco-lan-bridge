@@ -512,7 +512,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
       for (let j = 0; j < (max - min + 1); j++) {
         const Item = zones.byId(min + j)
         Item.Id = min + j
-        Item.Label = ZLabels[j].trim()
+        Item.Label = (ZLabels[j] || '').trim()
         Item.Type = parseInt(ZType[j], 10)
         Item.Techno = ZTechno[j]
         Item.setPartsFromString(ZParts[j])

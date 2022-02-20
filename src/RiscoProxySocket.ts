@@ -193,7 +193,7 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
    * @param   {Buffer}
    */
   async newDataFromPanelSocket(new_output_data: Buffer) {
-    const stringedBuffer = this.getStringedBuffer(new_output_data)
+    const stringedBuffer = this.bufferAsString(new_output_data)
     switch (new_output_data[1]) {
       case 19: {
         // let DecryptedBuffer = Buffer.from(new_output_data, this.encoding).toString(this.encoding);
@@ -265,7 +265,7 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
    */
   newDataFromCloudSocket(new_input_data: Buffer) {
     assertIsDefined(this.panelSocket, 'panelSocket')
-    const dataBufferAsString = this.getStringedBuffer(new_input_data)
+    const dataBufferAsString = this.bufferAsString(new_input_data)
 
     switch (new_input_data[1]) {
       case 19: {
@@ -283,7 +283,7 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
         if (this.inRemoteConn && crcOK && cmdStr.includes('DCN')) {
           this.inRemoteConn = false
           const FakeResponse = this.rCrypt.getCommandBuffer('ACK', this.lastRmtId || -1, true)
-          logger.log('debug', `Send Fake Response to RiscoCloud Socket : ${this.getStringedBuffer(FakeResponse)}`)
+          logger.log('debug', `Send Fake Response to RiscoCloud Socket : ${this.bufferAsString(FakeResponse)}`)
           this.cloudSocket.write(FakeResponse)
           this.emit('EndIncomingRemoteConnection')
         }
@@ -301,7 +301,7 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
               const rmtPassword = cmdStr.substring(cmdStr.indexOf('=') + 1)
               if (parseInt(rmtPassword, 10) === parseInt(this.panelPassword, 10)) {
                 const fakeResponse = this.rCrypt.getCommandBuffer('ACK', this.lastRmtId || -1, false)
-                logger.log('debug', `Send Fake Response to RiscoCloud Socket : ${this.getStringedBuffer(fakeResponse)}`)
+                logger.log('debug', `Send Fake Response to RiscoCloud Socket : ${this.bufferAsString(fakeResponse)}`)
                 this.cloudSocket.write(fakeResponse)
               }
             } else {
@@ -311,7 +311,7 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
           case (cmdStr.includes('LCL')):
             if (this.isPanelSocketConnected) {
               const fakeResponse = this.rCrypt.getCommandBuffer('ACK', this.lastRmtId || -1, false)
-              logger.log('debug', `Send Fake Response to RiscoCloud Socket : ${this.getStringedBuffer(fakeResponse)}`)
+              logger.log('debug', `Send Fake Response to RiscoCloud Socket : ${this.bufferAsString(fakeResponse)}`)
               this.cloudSocket.write(fakeResponse)
             } else {
               this.panelSocket.write(new_input_data)
