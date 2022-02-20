@@ -1,32 +1,3 @@
-/* 
- *  Package: risco-lan-bridge
- *  File: RiscoComm.js
- *  
- *  MIT License
- *  
- *  Copyright (c) 2021 TJForc
- *  
- *  Permission is hereby granted, free of charge, to any person obtaining a copy
- *  of this software and associated documentation files (the "Software"), to deal
- *  in the Software without restriction, including without limitation the rights
- *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- *  copies of the Software, and to permit persons to whom the Software is
- *  furnished to do so, subject to the following conditions:
- *  
- *  The above copyright notice and this permission notice shall be included in all
- *  copies or substantial portions of the Software.
- *  
- *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- *  SOFTWARE.
- */
-
-'use strict'
-
 import { RiscoBaseSocket } from './RiscoBaseSocket'
 import { RiscoDirectTCPSocket } from './RiscoDirectSocket'
 import { PanelType, RiscoError, TimeZoneStr } from './constants'
@@ -151,30 +122,30 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
     logger.log('verbose', `Start Connection to Panel`)
     //verify if listener exist before kill it
     if (this.tcpSocket !== undefined) {
-      logger.log('debug', `TCP Socket is already created, Connect It`)
+      logger.log('debug', `A TCP Socket is already created, clearing its listeners `)
       this.tcpSocket.removeAllListeners()
-    } else {
-      logger.log('debug', `TCP Socket is not already created, Create It`)
-
-      let tcpSocket: RiscoBaseSocket
-      if (this.socketOptions.socketMode === 'proxy') {
-        tcpSocket = new RiscoProxyTCPSocket(this.socketOptions, this.rCrypt)
-      } else {
-        tcpSocket = new RiscoDirectTCPSocket(this.socketOptions, this.rCrypt)
-      }
-
-      this.tcpSocket = tcpSocket
     }
+    logger.log('debug', `TCP Socket is not already created, Create It`)
+
+    let tcpSocket: RiscoBaseSocket
+    if (this.socketOptions.socketMode === 'proxy') {
+      tcpSocket = new RiscoProxyTCPSocket(this.socketOptions, this.rCrypt)
+    } else {
+      tcpSocket = new RiscoDirectTCPSocket(this.socketOptions, this.rCrypt)
+    }
+
+    this.tcpSocket = tcpSocket
     logger.log('debug', `TCP Socket must be created now`)
 
     this.tcpSocket.once('Disconnected', (allowReconnect: boolean) => {
+      logger.log('info', `TCP Socket Disconnected`)
       if (this.isDisconnecting || !allowReconnect) {
-        logger.log('info', `TCP Socket Disconnected`)
+        logger.log('info', `Won't attempt automatic reconnection`)
         if (this.autoReconnectTimer !== undefined) {
           clearTimeout(this.autoReconnectTimer)
         }
       } else {
-        logger.log('error', `TCP Socket Disconnected`)
+        logger.log('info', `Automatic reconnection will be attempted in ${this.reconnectDelay} ms`)
         if (this.autoReconnectTimer === undefined) {
           this.autoReconnectTimer = setTimeout(() => {
             this.autoReconnectTimer = undefined
@@ -209,20 +180,6 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
       // Finally, Communication is ready
       this.emit('PanelCommReady', this.panelInfo)
     })
-
-    // this.tcpSocket.on('IncomingRemoteConnection', () => {
-    //   logger.log('debug', `Start of remote connection detected.`)
-    //   if (this.watchDogTimer !== undefined) {
-    //     clearTimeout(this.watchDogTimer)
-    //   }
-    // })
-    //
-    // this.tcpSocket.on('EndIncomingRemoteConnection', () => {
-    //   logger.log('debug', `Remote connection end detected.`)
-    //   if (this.tcpSocket?.isSocketConnected) {
-    //     this.watchDog()
-    //   }
-    // })
 
     await this.tcpSocket.connect()
   }
