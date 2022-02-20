@@ -57,6 +57,9 @@ export class RiscoPanel extends EventEmitter {
 
       logger.log('debug', `End of device discovery.`);
 
+      logger.log('debug', `Starting watchdog`);
+      this.riscoComm.watchDog();
+
       this.mbSystem.on('SStatusChanged', (EventStr: string) => {
         logger.log('debug', `MBSystem Status Changed :\n New Status: ${EventStr}`);
       });

@@ -176,7 +176,6 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
       if ((CommandsArr !== undefined) && (CommandsArr.length >= 1)) {
         await this.tcpSocket?.modifyPanelConfig(CommandsArr)
       }
-      this.watchDog()
       // Finally, Communication is ready
       this.emit('PanelCommReady', this.panelInfo)
     })
