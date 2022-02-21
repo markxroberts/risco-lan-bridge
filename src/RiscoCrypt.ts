@@ -168,16 +168,16 @@ export class RiscoCrypt {
 
   /*
    * Verify if Received Data CRC is OK
-   * @param	{string}	UnCryptedMessage
-   * @param	{string}	RcvCRC
+   * @param	{string}	decryptedMessage
+   * @param	{string}	receivedCrc
    * @return	{boolean}
    */
-  private isValidCRC(CmdId: number | null, UnCryptedMessage: string, RcvCRC: string): boolean {
-    const StrNoCRC = UnCryptedMessage.substring(0, UnCryptedMessage.indexOf(String.fromCharCode(23)) + 1);
+  private isValidCRC(CmdId: number | null, decryptedMessage: string, receivedCrc: string): boolean {
+    const strNoCRC = decryptedMessage.substring(0, decryptedMessage.indexOf(String.fromCharCode(23)) + 1);
 
-    const MsgCRC = this.getCommandCRC(StrNoCRC);
-    const crcOK = RcvCRC == MsgCRC;
-    logger.log('debug', `Command[${CmdId}] crcOK : ${crcOK}, Computed CRC : ${MsgCRC}, Received CRC: ${RcvCRC}`);
+    const computedCrc = this.getCommandCRC(strNoCRC);
+    const crcOK = (receivedCrc == computedCrc || receivedCrc == computedCrc.substring(0, 3));
+    logger.log('debug', `Command[${CmdId}] crcOK : ${crcOK}, Computed CRC : ${computedCrc}, Received CRC: ${receivedCrc}`);
     return crcOK;
   }
 
