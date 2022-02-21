@@ -188,7 +188,6 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
    * @param {string}
    */
   async dataFromPanel(cmdId: number | null, data: string) {
-    logger.log('verbose', `Command[${cmdId}] Received data from panel: ${data}`)
     switch (true) {
       case (data.includes('ACK')):
         break
@@ -708,7 +707,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
    */
   watchDog() {
     this.watchDogTimer = setTimeout(async () => {
-      if (this.tcpSocket?.isPanelSocketConnected) {
+      if (this.tcpSocket?.isPanelSocketConnected && !this.isDisconnecting) {
         this.watchDog()
         if (!this.tcpSocket.inProg) {
           await this.tcpSocket.sendCommand(`CLOCK`)

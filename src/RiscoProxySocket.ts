@@ -333,7 +333,6 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
     this.disconnecting = true
     this.proxyInServer.close()
     if (this.panelSocket !== undefined && !this.panelSocket.destroyed) {
-      // clearTimeout(this.WatchDogTimer);
       if (this.isPanelSocketConnected) {
         await this.sendCommand('DCN')
       }

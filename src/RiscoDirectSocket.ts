@@ -52,10 +52,6 @@ export class RiscoDirectTCPSocket extends RiscoBaseSocket {
     }
     this.disconnecting = true
     if (this.panelSocket !== undefined && !this.panelSocket.destroyed) {
-      if (this.watchDogTimer) {
-        clearTimeout(this.watchDogTimer)
-      }
-
       if (this.isPanelSocketConnected) {
         await this.sendCommand('DCN')
       }
