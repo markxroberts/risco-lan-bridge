@@ -1,32 +1,3 @@
-/* 
- *  Package: risco-lan-bridge
- *  File: RiscoChannels.js
- *  
- *  MIT License
- *  
- *  Copyright (c) 2021 TJForc
- *  
- *  Permission is hereby granted, free of charge, to any person obtaining a copy
- *  of this software and associated documentation files (the "Software"), to deal
- *  in the Software without restriction, including without limitation the rights
- *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- *  copies of the Software, and to permit persons to whom the Software is
- *  furnished to do so, subject to the following conditions:
- *  
- *  The above copyright notice and this permission notice shall be included in all
- *  copies or substantial portions of the Software.
- *  
- *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- *  SOFTWARE.
- */
-
-'use strict';
-
 import { Socket } from 'net';
 import { RiscoError } from './constants';
 import { EventEmitter } from 'events';
@@ -34,6 +5,7 @@ import { logger } from './Logger';
 import { assertIsDefined, assertIsTrue } from './Assertions';
 import { RiscoCrypt } from './RiscoCrypt';
 import { TypedEmitter } from 'tiny-typed-emitter';
+import { WriteStream } from 'fs';
 
 interface RiscoSocketEvents {
   'BadCRCLimit': () => void;
@@ -50,9 +22,10 @@ export interface SocketOptions {
   listeningPort: number,
   panelIp: string,
   panelPort: number,
+  panelId: number,
   guessPasswordAndPanelId: boolean,
   panelPassword: string,
-  encoding: string,
+  encoding: BufferEncoding,
   cloudUrl: string,
   cloudPort: number,
   panelConnectionDelay: number,
@@ -65,13 +38,7 @@ export type SocketMode = 'direct' | 'proxy'
 
 export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
 
-  protected panelIp: string;
-  protected panelPort: number;
-  protected panelPassword: string;
-  protected guessPasswordAndPanelId: boolean;
   protected socketTimeout: number;
-  protected socketMode: SocketMode;
-
   panelSocket: Socket | undefined;
 
   isPanelSocketConnected = false;
@@ -81,27 +48,27 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
   inPasswordGuess = false;
   protected disconnecting = false;
 
+  protected commandResponseEmitter = new EventEmitter();
   protected currentCommandId = 0;
+
   private badCRCTimer?: NodeJS.Timeout;
   private badCRCCount = 0;
-  private badCRCLimit = 10;
 
+  private badCRCLimit = 10;
   private inflightCommands: (CommandContext | undefined)[] = [];
+
   private lastCommand: CommandContext = {
     attempts: 0, commandId: 0, commandStr: '', crcOk: false,
   };
+  protected rCrypt: RiscoCrypt;
 
-  protected commandResponseEmitter = new EventEmitter();
-
-  protected constructor(socketOptions: SocketOptions, protected rCrypt: RiscoCrypt) {
+  protected constructor(protected socketOptions: SocketOptions, private commandsStream: WriteStream | undefined) {
     super();
-    this.socketMode = socketOptions.socketMode;
-
-    this.panelIp = socketOptions.panelIp;
-    this.panelPort = socketOptions.panelPort;
-    this.panelPassword = socketOptions.panelPassword;
-    this.guessPasswordAndPanelId = socketOptions.guessPasswordAndPanelId;
     this.socketTimeout = 30000;
+    this.rCrypt = new RiscoCrypt({
+      panelId: socketOptions.panelId,
+      encoding: socketOptions.encoding || 'utf-8'
+    })
   }
 
   abstract connect(): Promise<boolean>
@@ -317,13 +284,23 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
     }
 
     if (shouldRetry && !this.disconnecting && cmdCtx.attempts <= 3) {
+      this.traceCommand(cmdCtx);
       logger.log('verbose', `Command[${cmdId}] retrying command`);
       return await this.sendCommand(commandStr, progCmd, cmdCtx);
     } else {
+      this.traceCommand(cmdCtx);
       logger.log('debug', `Command[${cmdId}] command response : ${cmdCtx.receivedStr}`);
       this.inflightCommands[cmdId] = undefined;
-      return cmdCtx.receivedStr || '';
+      if (cmdCtx.receivedStr !== undefined) {
+        return cmdCtx.receivedStr;
+      } else {
+        throw Error(`Failed to process command ${JSON.stringify(cmdCtx)}`);
+      }
     }
+  }
+
+  protected traceCommand(cmdCtx: CommandContext) {
+    this.commandsStream?.write(`${new Date().toISOString()}|${cmdCtx.attempts}|${cmdCtx.commandId}|${cmdCtx.commandStr}|${cmdCtx.crcOk}|${cmdCtx.receivedStr}|${this.bufferAsString(cmdCtx.receivedBuffer)}\n`);
   }
 
   /*
@@ -366,7 +343,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
   isErrorCode(data: string): boolean {
     if ((data !== undefined) && (Object.keys(RiscoError)).includes(data)) {
       return true;
-    } else if ((this.socketMode === 'proxy') && (data === undefined)) {
+    } else if ((this.socketOptions.socketMode === 'proxy') && (data === undefined)) {
       return true;
     } else {
       return false;
@@ -384,8 +361,8 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
   /**
    * Convert Buffer to string representation
    */
-  protected bufferAsString(data: Buffer): string {
-    return `[${data.join(',')}]`;
+  protected bufferAsString(data: Buffer | undefined): string {
+    return `[${data?.join(',')}]`;
   }
 
   /*
@@ -558,20 +535,22 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
   protected async panelConnect(codeLength = 4): Promise<boolean> {
     assertIsTrue(this.isPanelSocketConnected, 'isPanelSocketConnected', 'Socket failed to connect after 100ms delay');
 
+    this.rCrypt.cryptCommands = false;
+
     logger.log('verbose', `Authenticating to the panel`);
-    const rmtResponse = await this.sendCommand(`RMT=${this.panelPassword.toString().padStart(codeLength, '0')}`);
+    const rmtResponse = await this.sendCommand(`RMT=${this.socketOptions.panelPassword.toString().padStart(codeLength, '0')}`);
     let authenticationOk = false;
     if (!rmtResponse.includes('ACK')) {
       logger.log('warn', `Provided password is incorrect`);
       if (this.isErrorCode(rmtResponse) && !this.disconnecting) {
-        if (this.guessPasswordAndPanelId) {
+        if (this.socketOptions.guessPasswordAndPanelId) {
           logger.log('info', `Trying to guess password (brut force)`);
           this.inPasswordGuess = true;
           const foundPassword = await this.guessPassword();
           this.inPasswordGuess = false;
           if (foundPassword !== null) {
             logger.log('info', `Discovered Access Code : ${foundPassword}`);
-            this.panelPassword = foundPassword;
+            this.socketOptions.panelPassword = foundPassword;
             authenticationOk = true;
           } else {
             logger.log('error', `Unable to discover password`);
@@ -640,6 +619,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
           if (cryptResult) {
             this.inCryptTest = false;
             logger.log('info', `Discovered Panel Id: ${this.rCrypt.panelId}`);
+            this.socketOptions.panelId = this.rCrypt.panelId;
             await new Promise(r => setTimeout(r, 1000));
           } else {
             logger.log('info', `Panel Id ${this.rCrypt.panelId} is incorrect`);

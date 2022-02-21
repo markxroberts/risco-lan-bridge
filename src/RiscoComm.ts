@@ -1,17 +1,16 @@
-import { RiscoBaseSocket } from './RiscoBaseSocket'
-import { RiscoDirectTCPSocket } from './RiscoDirectSocket'
-import { PanelType, RiscoError, TimeZoneStr } from './constants'
-import { Output, OutputList } from './Devices/Outputs'
-import { Zone, ZoneList } from './Devices/Zones'
-import { Partition, PartitionList } from './Devices/Partitions'
-import { MBSystem } from './Devices/System'
-import { assertIsDefined } from './Assertions'
-import { logger } from './Logger'
-import { PanelOptions } from './RiscoPanel'
-import { SocketOptions } from './RiscoBaseSocket'
-import { RiscoCrypt } from './RiscoCrypt'
-import { TypedEmitter } from 'tiny-typed-emitter'
-import { RiscoProxyTCPSocket } from './RiscoProxySocket'
+import { RiscoBaseSocket, SocketOptions } from './RiscoBaseSocket';
+import { RiscoDirectTCPSocket } from './RiscoDirectSocket';
+import { PanelType, RiscoError, TimeZoneStr } from './constants';
+import { Output, OutputList } from './Devices/Outputs';
+import { Zone, ZoneList } from './Devices/Zones';
+import { Partition, PartitionList } from './Devices/Partitions';
+import { MBSystem } from './Devices/System';
+import { assertIsDefined } from './Assertions';
+import { logger } from './Logger';
+import { PanelOptions } from './RiscoPanel';
+import { TypedEmitter } from 'tiny-typed-emitter';
+import { RiscoProxyTCPSocket } from './RiscoProxySocket';
+import fs, { WriteStream } from 'fs';
 
 export class PanelInfo {
 
@@ -45,7 +44,6 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
   private readonly GMT_TZ: string
 
   private readonly socketOptions: SocketOptions
-  private readonly rCrypt: RiscoCrypt
 
   panelInfo: PanelInfo | undefined
 
@@ -54,9 +52,11 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
 
   private autoReconnectTimer: NodeJS.Timeout | undefined
   private watchDogTimer: NodeJS.Timeout | undefined
+  private commandsStream: WriteStream | undefined;
 
   constructor(options: PanelOptions) {
     super()
+
     let panelId = 1
     if (options.panelId != null) {
       if (typeof options.panelId == 'string') {
@@ -66,23 +66,25 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
         panelId = options.panelId
       }
     }
-    
-    this.rCrypt = new RiscoCrypt({
-      panelId: panelId,
-      encoding: options.encoding || 'utf-8'
-    })
 
     this.socketOptions = {
       socketMode: options.socketMode || 'direct',
       panelIp: options.panelIp || '192.168.0.100',
       panelPort: options.panelPort || 1000,
+      panelId: panelId,
       panelPassword: options.panelPassword && RiscoComm.looksLikePanelPwd(options.panelPassword) ? options.panelPassword.toString() : '5678',
       encoding: options.encoding || 'utf-8',
       guessPasswordAndPanelId: options.guessPasswordAndPanelId !== undefined ? options.guessPasswordAndPanelId : true,
       listeningPort: options.listeningPort || 33000,
       cloudUrl: (options.cloudUrl || 'www.riscocloud.com'),
       cloudPort: options.cloudPort || 33000,
-      panelConnectionDelay: options.panelConnectionDelay || 30000
+      panelConnectionDelay: options.panelConnectionDelay || 30000,
+    }
+
+    if (options.commandsLog) {
+      const commandsFileName = `risco-commands-${new Date().toISOString()}.csv`
+      logger.log('info', `Logging commands to ${commandsFileName}`)
+      this.commandsStream = fs.createWriteStream(commandsFileName, { flags: 'a' });
     }
 
     this.reconnectDelay = 10000
@@ -129,9 +131,9 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
 
     let tcpSocket: RiscoBaseSocket
     if (this.socketOptions.socketMode === 'proxy') {
-      tcpSocket = new RiscoProxyTCPSocket(this.socketOptions, this.rCrypt)
+      tcpSocket = new RiscoProxyTCPSocket(this.socketOptions, this.commandsStream)
     } else {
-      tcpSocket = new RiscoDirectTCPSocket(this.socketOptions, this.rCrypt)
+      tcpSocket = new RiscoDirectTCPSocket(this.socketOptions, this.commandsStream)
     }
 
     this.tcpSocket = tcpSocket
@@ -709,7 +711,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
     this.watchDogTimer = setTimeout(async () => {
       if (this.tcpSocket?.isPanelSocketConnected && !this.isDisconnecting) {
         this.watchDog()
-        if (!this.tcpSocket.inProg) {
+        if (!this.tcpSocket.inProg && !this.tcpSocket.inCryptTest) {
           await this.tcpSocket.sendCommand(`CLOCK`)
         }
       }

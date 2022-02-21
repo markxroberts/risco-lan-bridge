@@ -11,3 +11,4 @@ node_modules/
 /dist/
 /yarn-error.log
 /*.iml
+risco-commands-*.csv

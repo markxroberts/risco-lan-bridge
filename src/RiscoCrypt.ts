@@ -65,23 +65,23 @@ export class RiscoCrypt {
    * @param    {string}    message
    * @return    {number}    Command Id
    *            {string}    Command itself
-   *            {boolean}    IsValidCRC
+   *            {boolean}    isValidCRC
    */
   decodeMessage(message: Buffer): [number | null, string, boolean] {
     this.cryptCommands = RiscoCrypt.isCrypted(message);
-    const DecryptedMsgBytes = this.decryptChars(message);
-    const DecryptedMessage = this.byteToString(DecryptedMsgBytes);
-    let cmd_id, Command, CRCValue;
-    if (DecryptedMessage.startsWith('N') || DecryptedMessage.startsWith('B')) {
-      cmd_id = null;
-      Command = DecryptedMessage.substring(0, DecryptedMessage.indexOf(String.fromCharCode(23)));
-      CRCValue = DecryptedMessage.substring(DecryptedMessage.indexOf(String.fromCharCode(23)) + 1);
+    const decryptedMsgBytes = this.decryptChars(message);
+    const decryptedMessage = this.byteToString(decryptedMsgBytes);
+    let cmdId, commandStr, crcValue;
+    if (decryptedMessage.startsWith('N') || decryptedMessage.startsWith('B')) {
+      cmdId = null;
+      commandStr = decryptedMessage.substring(0, decryptedMessage.indexOf(String.fromCharCode(23)));
+      crcValue = decryptedMessage.substring(decryptedMessage.indexOf(String.fromCharCode(23)) + 1);
     } else {
-      cmd_id = parseInt(DecryptedMessage.substring(0, 2), 10);
-      Command = DecryptedMessage.substring(2, DecryptedMessage.indexOf(String.fromCharCode(23)));
-      CRCValue = DecryptedMessage.substring(DecryptedMessage.indexOf(String.fromCharCode(23)) + 1);
+      cmdId = parseInt(decryptedMessage.substring(0, 2), 10);
+      commandStr = decryptedMessage.substring(2, decryptedMessage.indexOf(String.fromCharCode(23)));
+      crcValue = decryptedMessage.substring(decryptedMessage.indexOf(String.fromCharCode(23)) + 1);
     }
-    return [cmd_id, Command, this.IsValidCRC(cmd_id, DecryptedMessage, CRCValue)];
+    return [cmdId, commandStr, this.isValidCRC(cmdId, decryptedMessage, crcValue)];
   }
 
   /**
@@ -89,30 +89,30 @@ export class RiscoCrypt {
    * Each Char is XOred with same index char in PseudoBuffer
    * Some char are added (start of frame = 2, end of frame = 3 and encryption indicator = 17)
    *
-   * Command example :
+   * command example :
    * 01RMT=5678 ABCD
    * Where :
-   * 01    => Command number (from 01 to 49)
-   * RMT=    => Command itself (ReMoTe)
+   * 01    => command number (from 01 to 49)
+   * RMT=    => command itself (ReMoTe)
    * 5678 => Default passcode for Remote
    * ABCD => CRC Value
    *
    */
-  getCommandBuffer(Command: string, CmdId: number, ForceCrypt?: boolean | undefined): Buffer {
-    //byte = 2 => start of Command
+  getCommandBuffer(command: string, cmdId: number, forceCrypt?: boolean | undefined): Buffer {
+    //byte = 2 => start of command
     let Encrypted = [2];
-    if ((ForceCrypt === undefined && this.cryptCommands) || ForceCrypt) {
+    if ((forceCrypt === undefined && this.cryptCommands) || forceCrypt) {
       //byte = 17 => encryption indicator
       Encrypted = Encrypted.concat([17]);
     }
-    //Add Cmd_Id to Command and Separator character between Cmd and CRC value
-    const FullCmd = ''.concat(CmdId.toLocaleString('en-US', {
+    //Add Cmd_Id to command and Separator character between Cmd and CRC value
+    const FullCmd = ''.concat(cmdId.toLocaleString('en-US', {
       minimumIntegerDigits: 2,
       useGrouping: false,
-    }), Command, Buffer.from([23]).toString());
+    }), command, Buffer.from([23]).toString());
     //Calculate CRC
     const CRCValue = this.getCommandCRC(FullCmd);
-    //Encrypt Command
+    //Encrypt command
     Encrypted = Encrypted.concat(this.encryptChars(FullCmd.concat(CRCValue)));
 
     //Add Terminal Char
@@ -148,7 +148,7 @@ export class RiscoCrypt {
     } else {
       PseudoBuffer.fill(0);
     }
-    logger.log('debug', `Pseudo Buffer Created for Panel Id(${this.panelId}): \n[${PseudoBuffer.join(',')}]`);
+    logger.log('debug', `Pseudo Buffer Created for Panel Id(${this.panelId})`);
     return PseudoBuffer;
   }
 
@@ -172,7 +172,7 @@ export class RiscoCrypt {
    * @param	{string}	RcvCRC
    * @return	{boolean}
    */
-  private IsValidCRC(CmdId: number | null, UnCryptedMessage: string, RcvCRC: string): boolean {
+  private isValidCRC(CmdId: number | null, UnCryptedMessage: string, RcvCRC: string): boolean {
     const StrNoCRC = UnCryptedMessage.substring(0, UnCryptedMessage.indexOf(String.fromCharCode(23)) + 1);
 
     const MsgCRC = this.getCommandCRC(StrNoCRC);

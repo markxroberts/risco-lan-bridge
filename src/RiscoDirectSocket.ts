@@ -1,13 +1,13 @@
-import { RiscoBaseSocket, SocketOptions } from './RiscoBaseSocket'
+import { RiscoBaseSocket, SocketOptions } from './RiscoBaseSocket';
 
-import { Socket } from 'net'
-import { logger } from './Logger'
-import { RiscoCrypt } from './RiscoCrypt'
+import { Socket } from 'net';
+import { logger } from './Logger';
+import { WriteStream } from 'fs';
 
 export class RiscoDirectTCPSocket extends RiscoBaseSocket {
 
-  constructor(socketOptions: SocketOptions, rcrypt: RiscoCrypt) {
-    super(socketOptions, rcrypt)
+  constructor(socketOptions: SocketOptions, commandsStream: WriteStream | undefined) {
+    super(socketOptions, commandsStream)
   }
 
   /*
@@ -39,7 +39,7 @@ export class RiscoDirectTCPSocket extends RiscoBaseSocket {
     this.panelSocket.on('data', (inputData: Buffer) => {
       this.newDataHandler(inputData)
     })
-    this.panelSocket.connect(this.panelPort, this.panelIp)
+    this.panelSocket.connect(this.socketOptions.panelPort, this.socketOptions.panelIp)
     return true
   }
 
@@ -53,7 +53,12 @@ export class RiscoDirectTCPSocket extends RiscoBaseSocket {
     this.disconnecting = true
     if (this.panelSocket !== undefined && !this.panelSocket.destroyed) {
       if (this.isPanelSocketConnected) {
-        await this.sendCommand('DCN')
+        try {
+          await this.sendCommand('DCN')
+        } catch (e) {
+          logger.log('warn', e)
+          logger.log('warn', 'Error while sending DCN command')
+        }
       }
       this.panelSocket.destroy()
       logger.log('debug', `Socket Destroyed.`)

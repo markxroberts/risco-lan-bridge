@@ -1,8 +1,8 @@
-import { Server, Socket } from 'net'
-import { RiscoBaseSocket, SocketOptions } from './RiscoBaseSocket'
-import { RiscoCrypt } from './RiscoCrypt'
-import { logger } from './Logger'
-import { assertIsDefined } from './Assertions'
+import { Server, Socket } from 'net';
+import { RiscoBaseSocket, SocketOptions } from './RiscoBaseSocket';
+import { logger } from './Logger';
+import { assertIsDefined } from './Assertions';
+import { WriteStream } from 'fs';
 
 export class RiscoProxyTCPSocket extends RiscoBaseSocket {
 
@@ -24,14 +24,14 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
   private inRemoteConn = false
   private isPanelConnecting = false
 
-  constructor(SocketOptions: SocketOptions, rcrypt: RiscoCrypt) {
-    super(SocketOptions, rcrypt)
-    this.listeningPort = SocketOptions.listeningPort
+  constructor(socketOptions: SocketOptions, commandsStream: WriteStream | undefined) {
+    super(socketOptions, commandsStream)
+    this.listeningPort = socketOptions.listeningPort
     this.cloudSocketTimeout = 120000
     this.cloudConnectionRetryTimer = undefined
-    this.cloudPort = SocketOptions.cloudPort
-    this.cloudUrl = SocketOptions.cloudUrl
-    this.panelConnectionDelay = SocketOptions.panelConnectionDelay
+    this.cloudPort = socketOptions.cloudPort
+    this.cloudUrl = socketOptions.cloudUrl
+    this.panelConnectionDelay = socketOptions.panelConnectionDelay
     this.cloudSocket = new Socket()
     this.proxyInServer = new Server()
     // Accept only 1 connections at the same time
@@ -299,7 +299,7 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
             this.inRemoteConn = true
             if (this.isPanelSocketConnected) {
               const rmtPassword = cmdStr.substring(cmdStr.indexOf('=') + 1)
-              if (parseInt(rmtPassword, 10) === parseInt(this.panelPassword, 10)) {
+              if (parseInt(rmtPassword, 10) === parseInt(this.socketOptions.panelPassword, 10)) {
                 const fakeResponse = this.rCrypt.getCommandBuffer('ACK', this.lastRmtId || -1, false)
                 logger.log('debug', `Send Fake Response to RiscoCloud Socket : ${this.bufferAsString(fakeResponse)}`)
                 this.cloudSocket.write(fakeResponse)
@@ -334,7 +334,12 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
     this.proxyInServer.close()
     if (this.panelSocket !== undefined && !this.panelSocket.destroyed) {
       if (this.isPanelSocketConnected) {
-        await this.sendCommand('DCN')
+        try {
+          await this.sendCommand('DCN')
+        } catch (e) {
+          logger.log('warn', e)
+          logger.log('warn', 'Error while sending DCN command')
+        }
       }
       this.panelSocket.removeAllListeners()
       this.panelSocket.destroy()

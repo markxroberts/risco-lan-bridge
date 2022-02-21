@@ -24,6 +24,7 @@ export interface PanelOptions {
   socketMode?: SocketMode,
   ntpServer?: string,
   ntpPort?: number,
+  commandsLog: boolean,
 }
 
 export class RiscoPanel extends EventEmitter {
@@ -43,19 +44,19 @@ export class RiscoPanel extends EventEmitter {
     this.riscoComm = new RiscoComm(options);
 
     this.riscoComm.on('PanelCommReady', async () => {
-      logger.log('debug', `Beginning of device discovery.`);
+      logger.log('info', `Starting devices discovery`);
       try {
         this.mbSystem = await this.riscoComm.getSystemData();
         this.zones = await this.riscoComm.GetAllZonesData();
         this.outputs = await this.riscoComm.getAllOutputsData();
         this.partitions = await this.riscoComm.getAllPartitionsData();
       } catch (e) {
-        logger.log('error', `Error caught during devices discovery, retrying. ${e}`);
+        logger.log('error', e);
+        logger.log('error', `Error caught during devices discovery, retrying`);
         this.riscoComm.tcpSocket?.disconnect(true);
         return;
       }
-
-      logger.log('debug', `End of device discovery.`);
+      logger.log('debug', `End of devices discovery`);
 
       logger.log('debug', `Starting watchdog`);
       this.riscoComm.watchDog();
