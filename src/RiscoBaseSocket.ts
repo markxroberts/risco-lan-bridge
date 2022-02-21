@@ -88,7 +88,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
 
   private inflightCommands: (CommandContext | undefined)[] = [];
   private lastCommand: CommandContext = {
-    attempts: 0, commandId: 0, commandStr: '', crcOk: false
+    attempts: 0, commandId: 0, commandStr: '', crcOk: false,
   };
 
   protected commandResponseEmitter = new EventEmitter();
@@ -321,8 +321,8 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
       return await this.sendCommand(commandStr, progCmd, cmdCtx);
     } else {
       logger.log('debug', `Command[${cmdId}] command response : ${cmdCtx.receivedStr}`);
-      this.inflightCommands[cmdId] = undefined
-      return cmdCtx.receivedStr || "";
+      this.inflightCommands[cmdId] = undefined;
+      return cmdCtx.receivedStr || '';
     }
   }
 
@@ -339,7 +339,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
       commandId: this.currentCommandId,
       attempts: 0,
       crcOk: false,
-      commandStr
+      commandStr,
     };
     this.inflightCommands[ctx.commandId] = ctx;
     this.lastCommand = ctx;
@@ -527,6 +527,9 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
   }
 
   private async guessPasswordForLength(length: number): Promise<string | null> {
+    if (!this.isPanelSocketConnected) {
+      return null;
+    }
     const maxValueForLength = Math.pow(10, length) - 1;
     let passwordAttempt = 0;
     logger.log('info', `Trying passwords from ` + passwordAttempt.toString().padStart(length, '0') + ' to ' + maxValueForLength.toString().padStart(length, '0') + '...');
@@ -540,7 +543,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
         return paddedPwd;
       }
       passwordAttempt++;
-    } while (passwordAttempt <= maxValueForLength);
+    } while (passwordAttempt <= maxValueForLength && this.isPanelSocketConnected);
     return null;
   }
 
