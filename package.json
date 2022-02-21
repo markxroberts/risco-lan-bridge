@@ -34,7 +34,7 @@
     "test": "jest --detectOpenHandles",
     "testw": "jest --watch",
     "run": "tsc && node ./dist/main.js",
-    "watch-dist": "onchange -i 'dist/**' -- cp -R dist ../risco-mqtt-home-assistant/node_modules/@vanackej/risco-lan-bridge"
+    "watch-dist": "onchange -i 'dist/**' -- cp -R dist ../risco-mqtt-local/node_modules/@vanackej/risco-lan-bridge"
   },
   "keywords": [
     "risco",
