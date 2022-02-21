@@ -22,7 +22,12 @@ export class RiscoDirectTCPSocket extends RiscoBaseSocket {
     this.panelSocket.once('ready', async () => {
       this.isPanelSocketConnected = true
       logger.log('verbose', `Socket Connected, log in to panel`)
-      await this.panelConnect()
+      try {
+        await this.panelConnect()
+      } catch (e) {
+        logger.log('error', e)
+        await this.disconnect(true)
+      }
     })
     this.panelSocket.once('error', (err) => {
       logger.log('error', `Socket Error : ${err}`)
