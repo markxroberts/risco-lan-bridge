@@ -35,6 +35,8 @@ export interface RiscoCryptOptions {
   encoding: BufferEncoding
 }
 
+const endOfBlockString = String.fromCharCode(23)
+
 /**
  *  Create a Crypt Object for Encoding / Decoding Risco Communication
  *  This Pseudo Buffer is based on Panel Id
@@ -68,18 +70,18 @@ export class RiscoCrypt {
    *            {boolean}    isValidCRC
    */
   decodeMessage(message: Buffer): [number | null, string, boolean] {
-    this.cryptCommands = RiscoCrypt.isCrypted(message);
+    this.cryptCommands = RiscoCrypt.isEncrypted(message);
     const decryptedMsgBytes = this.decryptChars(message);
     const decryptedMessage = this.byteToString(decryptedMsgBytes);
     let cmdId, commandStr, crcValue;
     if (decryptedMessage.startsWith('N') || decryptedMessage.startsWith('B')) {
       cmdId = null;
-      commandStr = decryptedMessage.substring(0, decryptedMessage.indexOf(String.fromCharCode(23)));
-      crcValue = decryptedMessage.substring(decryptedMessage.indexOf(String.fromCharCode(23)) + 1);
+      commandStr = decryptedMessage.substring(0, decryptedMessage.indexOf(endOfBlockString));
+      crcValue = decryptedMessage.substring(decryptedMessage.indexOf(endOfBlockString) + 1);
     } else {
       cmdId = parseInt(decryptedMessage.substring(0, 2), 10);
-      commandStr = decryptedMessage.substring(2, decryptedMessage.indexOf(String.fromCharCode(23)));
-      crcValue = decryptedMessage.substring(decryptedMessage.indexOf(String.fromCharCode(23)) + 1);
+      commandStr = decryptedMessage.substring(2, decryptedMessage.indexOf(endOfBlockString));
+      crcValue = decryptedMessage.substring(decryptedMessage.indexOf(endOfBlockString) + 1);
     }
     return [cmdId, commandStr, this.isValidCRC(cmdId, decryptedMessage, crcValue)];
   }
@@ -173,10 +175,10 @@ export class RiscoCrypt {
    * @return	{boolean}
    */
   private isValidCRC(CmdId: number | null, decryptedMessage: string, receivedCrc: string): boolean {
-    const strNoCRC = decryptedMessage.substring(0, decryptedMessage.indexOf(String.fromCharCode(23)) + 1);
+    const strNoCRC = decryptedMessage.substring(0, decryptedMessage.indexOf(endOfBlockString) + 1);
 
     const computedCrc = this.getCommandCRC(strNoCRC);
-    const crcOK = (receivedCrc == computedCrc || receivedCrc == computedCrc.substring(0, 3));
+    const crcOK = (receivedCrc == computedCrc);
     logger.log('debug', `Command[${CmdId}] crcOK : ${crcOK}, Computed CRC : ${computedCrc}, Received CRC: ${receivedCrc}`);
     return crcOK;
   }
@@ -205,7 +207,7 @@ export class RiscoCrypt {
    */
   private encryptChars(charsCmd: string): number[] {
     const offset = 0;
-    let cryptedChars: number[] = [];
+    let encryptedChars: number[] = [];
     let position = 0;
     const chars = Buffer.from(charsCmd, this.encoding);
     for (let i = 0; i < chars.length; i++) {
@@ -216,40 +218,44 @@ export class RiscoCrypt {
         case 2:
         case 3:
         case 16:
-          cryptedChars = cryptedChars.concat([16]);
+          encryptedChars = encryptedChars.concat([16]);
       }
-      cryptedChars = cryptedChars.concat([chars[i]]);
+      encryptedChars = encryptedChars.concat([chars[i]]);
       position++;
     }
-    return cryptedChars;
+    return encryptedChars;
   }
 
   /**
    * Decryption mechanism
    */
   private decryptChars(charsCmd: Buffer): Buffer {
-    const decrypt = RiscoCrypt.isCrypted(charsCmd);
+    let escapedDleChars: number[] = [];
+    for (let i = 0; i < charsCmd.length; i++) {
+      if ((charsCmd[i] == 16) && (charsCmd[i + 1] == 2 || charsCmd[i + 1] == 3 || charsCmd[i + 1] == 16)) {
+        escapedDleChars = escapedDleChars.concat(charsCmd[i + 1]);
+        i++
+      } else {
+        escapedDleChars = escapedDleChars.concat(charsCmd[i])
+      }
+    }
+    const decrypt = RiscoCrypt.isEncrypted(charsCmd);
     let offset = 0;
-    let cryptedChars: number[] = [];
+    let decryptedChars: number[] = [];
     let position = 0;
-    const chars = charsCmd;
-    for (let i = (decrypt ? 2 : 1); i < chars.length - 1; i++) {
+
+    for (let i = (decrypt ? 2 : 1); i < escapedDleChars.length - 1; i++) {
       if (decrypt) {
-        if ((chars[i] == 16) && (chars[i + 1] == 2 || chars[i + 1] == 3 || chars[i + 1] == 16)) {
-          offset++;
-        } else {
-          chars[i] ^= this.cryptBuffer[position - offset];
-        }
+        escapedDleChars[i] ^= this.cryptBuffer[position - offset];
       }
-      if (chars[i] != 16) {
-        cryptedChars = cryptedChars.concat([chars[i]]);
-      }
+      decryptedChars = decryptedChars.concat([escapedDleChars[i]]);
+      // console.log(`Position: ${position}, i: ${i}, chars[i]: ${escapedDleChars[i]}, Output: ${this.byteToString(Buffer.from(decryptedChars))}`)
       position++;
     }
-    return Buffer.from(cryptedChars);
+    return Buffer.from(decryptedChars);
   }
 
-  private static isCrypted(data: Buffer): boolean {
+  private static isEncrypted(data: Buffer): boolean {
     return data[1] == 17;
   }
 
