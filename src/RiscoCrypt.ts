@@ -175,11 +175,22 @@ export class RiscoCrypt {
    * @return	{boolean}
    */
   private isValidCRC(CmdId: number | null, decryptedMessage: string, receivedCrc: string): boolean {
+    if (receivedCrc.length != 4) {
+      logger.log('debug', `Command[${CmdId}] Incorrect crc : expecting 4 chars length, got ${receivedCrc.length}`);
+      return false;
+    }
+    for (let i = 0; i < 4; i++) {
+      if (receivedCrc.charCodeAt(i) > 127) {
+        logger.log('debug', `Command[${CmdId}] Incorrect crc : expecting ascii only chars`);
+        return false;
+      }
+    }
+
     const strNoCRC = decryptedMessage.substring(0, decryptedMessage.indexOf(endOfBlockString) + 1);
 
     const computedCrc = this.getCommandCRC(strNoCRC);
     const crcOK = (receivedCrc == computedCrc);
-    logger.log('debug', `Command[${CmdId}] crcOK : ${crcOK}, Computed CRC : ${computedCrc}, Received CRC: ${receivedCrc}`);
+    logger.log('debug', `Command[${CmdId}] crcOK : ${crcOK}, Computed CRC : ${computedCrc}, Message CRC: ${receivedCrc}`);
     return crcOK;
   }
 

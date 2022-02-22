@@ -59,7 +59,7 @@ export class RiscoDirectTCPSocket extends RiscoBaseSocket {
     if (this.panelSocket !== undefined && !this.panelSocket.destroyed) {
       if (this.isPanelSocketConnected) {
         try {
-          await this.sendCommand('DCN')
+          await this.sendCommand('DCN', false, false)
         } catch (e) {
           logger.log('warn', e)
           logger.log('warn', 'Error while sending DCN command')

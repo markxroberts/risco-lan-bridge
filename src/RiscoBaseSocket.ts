@@ -67,8 +67,8 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
     this.socketTimeout = 30000;
     this.rCrypt = new RiscoCrypt({
       panelId: socketOptions.panelId,
-      encoding: socketOptions.encoding || 'utf-8'
-    })
+      encoding: socketOptions.encoding || 'utf-8',
+    });
   }
 
   abstract connect(): Promise<boolean>
@@ -99,6 +99,10 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
       logger.log('verbose', `Command[${receivedId}] Received data: ${receivedCommandStr}, crcOk: ${isCRCOK}`);
 
       if (this.inCryptTest) {
+        if (receivedCommandStr.startsWith('CLOCK')) {
+          logger.log('debug', 'ignoring CLOCK message during crypto test');
+          continue;
+        }
         // in crypto test, always return the result for analysis, event if CRC is KO
         logger.log('verbose', `Command[${this.lastCommand.commandId}] inCryptTest enabled, emitting response without checks to latest sent command`);
         this.lastCommand.receivedBuffer = receivedBuffer;
@@ -201,7 +205,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
   /*
    * Send Data to Socket and Wait for a response
    */
-  async sendCommand(commandStr: string, progCmd = false, cmdCtx?: CommandContext): Promise<string> {
+  async sendCommand(commandStr: string, progCmd = false, forceEncryption: boolean | undefined = undefined, cmdCtx?: CommandContext): Promise<string> {
     assertIsDefined(this.panelSocket, `panelSocket`, `sendCommand(${commandStr}): socket is undefined`);
     if (this.panelSocket.destroyed) {
       logger.log('warn', `sendCommand(${commandStr}): Socket is destroyed, ignoring command`);
@@ -260,8 +264,9 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
       this.panelSocket.on('error', socketErrorHandler);
       this.commandResponseEmitter.on(`CmdResponse_${cmdId}`, responseHandler);
 
-      const encryptedCmdBuffer = this.rCrypt.getCommandBuffer(commandStr, cmdId);
+      const encryptedCmdBuffer = this.rCrypt.getCommandBuffer(commandStr, cmdId, forceEncryption);
       this.panelSocket.write(encryptedCmdBuffer);
+      cmdCtx.sentBuffer = encryptedCmdBuffer;
 
       logger.log('debug', `Command[${cmdId}] Writing command buffer to socket: ${this.bufferAsString(encryptedCmdBuffer)}`);
       this.emit('DataSent', this.currentCommandId, commandStr);
@@ -286,7 +291,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
     if (shouldRetry && !this.disconnecting && cmdCtx.attempts <= 3) {
       this.traceCommand(cmdCtx);
       logger.log('verbose', `Command[${cmdId}] retrying command`);
-      return await this.sendCommand(commandStr, progCmd, cmdCtx);
+      return await this.sendCommand(commandStr, progCmd, forceEncryption, cmdCtx);
     } else {
       this.traceCommand(cmdCtx);
       logger.log('debug', `Command[${cmdId}] command response : ${cmdCtx.receivedStr}`);
@@ -300,7 +305,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
   }
 
   protected traceCommand(cmdCtx: CommandContext) {
-    this.commandsStream?.write(`${new Date().toISOString()}|${cmdCtx.attempts}|${cmdCtx.commandId}|${cmdCtx.commandStr}|${cmdCtx.crcOk}|${cmdCtx.receivedStr}|${this.bufferAsString(cmdCtx.receivedBuffer)}\n`);
+    this.commandsStream?.write(`${new Date().toISOString()}|${cmdCtx.attempts}|${cmdCtx.commandId}|${cmdCtx.commandStr}|${this.bufferAsString(cmdCtx.sentBuffer)}|${cmdCtx.crcOk}|${cmdCtx.receivedStr}|${this.bufferAsString(cmdCtx.receivedBuffer)}\n`);
   }
 
   /*
@@ -653,7 +658,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
       response = await this.sendCommand(`${testCmd}?`, false);
       logger.log('debug', `cryptTableTester response: ${response}, attempt: ${currentAttempt}`);
       currentAttempt++;
-    } while (this.isErrorCode(response) && currentAttempt < maxAttempts);
+    } while (this.isErrorCode(response) && !response.startsWith('N04') && currentAttempt < maxAttempts);
     return [this.lastCommand.crcOk && !this.isErrorCode(response), this.lastCommand.receivedBuffer || Buffer.of()];
   }
 
@@ -662,6 +667,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
 interface CommandContext {
   commandId: number;
   commandStr: string;
+  sentBuffer?: Buffer;
   attempts: number;
   receivedBuffer?: Buffer;
   receivedStr?: string;
