@@ -58,7 +58,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
   private inflightCommands: (CommandContext | undefined)[] = [];
 
   private lastCommand: CommandContext = {
-    attempts: 0, commandId: 0, commandStr: '', crcOk: false,
+    panelId: 0, attempts: 0, commandId: 0, commandStr: '', crcOk: false,
   };
   protected rCrypt: RiscoCrypt;
 
@@ -231,6 +231,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
       cmdCtx = this.allocateCmdCtx(commandStr);
     }
     cmdCtx.attempts++;
+    cmdCtx.panelId = this.rCrypt.panelId;
 
     const cmdId = cmdCtx.commandId;
 
@@ -305,7 +306,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
   }
 
   protected traceCommand(cmdCtx: CommandContext) {
-    this.commandsStream?.write(`${new Date().toISOString()}|${cmdCtx.attempts}|${cmdCtx.commandId}|${cmdCtx.commandStr}|${this.bufferAsString(cmdCtx.sentBuffer)}|${cmdCtx.crcOk}|${cmdCtx.receivedStr}|${this.bufferAsString(cmdCtx.receivedBuffer)}\n`);
+    this.commandsStream?.write(`${new Date().toISOString()}|${cmdCtx.panelId}|${cmdCtx.attempts}|${cmdCtx.commandId}|${cmdCtx.commandStr}|${this.bufferAsString(cmdCtx.sentBuffer)}|${cmdCtx.crcOk}|${cmdCtx.receivedStr}|${this.bufferAsString(cmdCtx.receivedBuffer)}\n`);
   }
 
   /*
@@ -318,6 +319,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
     }
     this.currentCommandId++;
     const ctx = {
+      panelId: this.rCrypt.panelId,
       commandId: this.currentCommandId,
       attempts: 0,
       crcOk: false,
@@ -648,23 +650,22 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
   */
   private async sendCryptTableTesterCmd(): Promise<[boolean, Buffer]> {
     const testCmd = `ZLBL*1:8`;
-    // this.cryptKeyValidity = undefined
-    // To avoid false positives, this command provides a long response which
-    // allows only few possible errors when calculating the CRC
-    const maxAttempts = 3;
-    let currentAttempt = 0;
+    const maxAttempts = 5;
+    let currentAttempt = 1;
     let response: string;
     do {
+      await new Promise(resolve => setTimeout(resolve, 500));
       response = await this.sendCommand(`${testCmd}?`, false);
       logger.log('debug', `cryptTableTester response: ${response}, attempt: ${currentAttempt}`);
       currentAttempt++;
-    } while (this.isErrorCode(response) && !response.startsWith('N04') && currentAttempt < maxAttempts);
+    } while (this.isErrorCode(response) && currentAttempt < maxAttempts);
     return [this.lastCommand.crcOk && !this.isErrorCode(response), this.lastCommand.receivedBuffer || Buffer.of()];
   }
 
 }
 
 interface CommandContext {
+  panelId: number;
   commandId: number;
   commandStr: string;
   sentBuffer?: Buffer;
