@@ -647,7 +647,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
   * and that it must be determined (provided that the option is activated).
   */
   private async sendCryptTableTesterCmd(): Promise<[boolean, Buffer]> {
-    const testCmd = `CUSTLST`;
+    const testCmd = `ZLBL*1:8`;
     // this.cryptKeyValidity = undefined
     // To avoid false positives, this command provides a long response which
     // allows only few possible errors when calculating the CRC
