@@ -22,15 +22,35 @@ describe('Crypto tests', () => {
   });
 
   it('One shot test', () => {
-    testAndLogBuffer(2,17,55,48,72,91,96,29,246,71,198,218,255,145,112,170,57,38,31,104,149,90,226,151,106,129,127,226,228,122,177,3)
+    guessAllPossiblesPanelsIdAndEncodings(2,17,50,48,88,78,124,18,255,54,201,187,169,210,54,109,102,115,13,9,92,8,163,223,51,192,129,199,150,119,197,75,3)
+    // guessAllPossiblesPanelsId(2,17,50,54,81,91,109,18,151,75,206,208,237,242,35,233,100,120,13,122,149,75,246,141,122,148,72,240,129,74,196,122,118,76,23,147,158,215,207,255,159,95,223,223,222,220,240,191,128,176,239,74,56,197,54,213,64,225,163,38,44,57,18,109,155,229,73,53,231,37,43,55,15,127,158,93,218,213,202,245,163,22,194,53,197,51,208,33,168,32,16,3,102,172,56,17,66,229,131,86,66,52,198,53,221,59,156,74,211,198,236,184,17,66,229,131,93,74,58,192,120,145,67,230,173,59,22,77,250,148,73,242,172,9,253,75,56,201,36,200,122,149,74,244,136,112,128,96,161,21,65,49,34,99,3)
   });
 
 
 });
 
+function guessAllPossiblesPanelsIdAndEncodings(...items: number[]) {
+  const buffer = Buffer.from(items);
+  let encodings: BufferEncoding[] = ['utf-8', 'latin1']
+  const panelsAndEncoding = []
+  for (let i = 0; i < 9999; i++) {
+
+    for (let e = 0; e < encodings.length; e++) {
+      const rCrypt = new RiscoCrypt({
+        encoding: encodings[e], panelId: i,
+      });
+      const decodeResult = rCrypt.decodeMessage(buffer);
+      if (decodeResult[2]) {
+        panelsAndEncoding.push({ panelId: i, encoding: encodings[e]})
+      }
+    }
+  }
+  console.log(`possible panels: ${JSON.stringify(panelsAndEncoding)}`);
+}
+
 function testAndLogBuffer(...items: number[]) {
   const rCrypt = new RiscoCrypt({
-    encoding: 'utf-8', panelId: 1,
+    encoding: 'latin1', panelId: 1,
   });
   const buffer = Buffer.from(items);
   const decodeResult = rCrypt.decodeMessage(buffer);
