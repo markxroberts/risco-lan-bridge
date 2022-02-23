@@ -13,57 +13,54 @@ import { RiscoProxyTCPSocket } from './RiscoProxySocket';
 import fs, { WriteStream } from 'fs';
 
 export class PanelInfo {
-
-  public PanelType!: string
-  public PanelModel!: string
-  public PanelFW!: string
-  public MaxZones!: number
-  public MaxParts!: number
-  public MaxOutputs!: number
-  public SupportPirCam!: boolean
-
+  public PanelType!: string;
+  public PanelModel!: string;
+  public PanelFW!: string;
+  public MaxZones!: number;
+  public MaxParts!: number;
+  public MaxOutputs!: number;
+  public SupportPirCam!: boolean;
 }
 
 interface RiscoCommEvents {
-  'PanelCommReady': (info: PanelInfo) => void
-  'NewOutputStatusFromPanel': (data: string) => void
-  'NewPartitionStatusFromPanel': (data: string) => void
-  'NewMBSystemStatusFromPanel': (data: string) => void
-  'NewZoneStatusFromPanel': (data: string) => void
-  'Clock': (data: string) => void
+  'PanelCommReady': (info: PanelInfo) => void;
+  'NewOutputStatusFromPanel': (data: string) => void;
+  'NewPartitionStatusFromPanel': (data: string) => void;
+  'NewMBSystemStatusFromPanel': (data: string) => void;
+  'NewZoneStatusFromPanel': (data: string) => void;
+  'Clock': (data: string) => void;
 }
 
 export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
 
-  private readonly reconnectDelay: number
-  private readonly watchDogInterval: number
-  private readonly disableRC: boolean
-  private readonly enableRC: boolean
-  private readonly ntpServer: string
-  private readonly ntpPort: number
-  private readonly GMT_TZ: string
+  private readonly reconnectDelay: number;
+  private readonly watchDogInterval: number;
+  private readonly disableRC: boolean;
+  private readonly enableRC: boolean;
+  private readonly ntpServer: string;
+  private readonly ntpPort: number;
+  private readonly GMT_TZ: string;
 
-  private readonly socketOptions: SocketOptions
+  private readonly socketOptions: SocketOptions;
 
-  panelInfo: PanelInfo | undefined
+  panelInfo: PanelInfo | undefined;
 
-  tcpSocket: RiscoBaseSocket | undefined
-  private isDisconnecting = false
+  tcpSocket: RiscoBaseSocket | undefined;
+  private isDisconnecting = false;
 
-  private autoReconnectTimer: NodeJS.Timeout | undefined
-  private watchDogTimer: NodeJS.Timeout | undefined
+  private autoReconnectTimer: NodeJS.Timeout | undefined;
+  private watchDogTimer: NodeJS.Timeout | undefined;
   private commandsStream: WriteStream | undefined;
 
   constructor(options: PanelOptions) {
-    super()
+    super();
 
-    let panelId = 1
+    let panelId = 1;
     if (options.panelId != null) {
       if (typeof options.panelId == 'string') {
-        panelId = parseInt(options.panelId, 10)
-      }
-      else {
-        panelId = options.panelId
+        panelId = parseInt(options.panelId, 10);
+      } else {
+        panelId = options.panelId;
       }
     }
 
@@ -79,37 +76,37 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
       cloudUrl: (options.cloudUrl || 'www.riscocloud.com'),
       cloudPort: options.cloudPort || 33000,
       panelConnectionDelay: options.panelConnectionDelay || 30000,
-    }
+    };
 
     if (options.commandsLog) {
-      const commandsFileName = `risco-commands-${new Date().toISOString()}.csv`
-      logger.log('info', `Logging commands to ${commandsFileName}`)
+      const commandsFileName = `risco-commands-${new Date().toISOString()}.csv`;
+      logger.log('info', `Logging commands to ${commandsFileName}`);
       this.commandsStream = fs.createWriteStream(commandsFileName, { flags: 'a' });
     }
 
-    this.reconnectDelay = 10000
-    this.disableRC = false
-    this.enableRC = false
-    this.ntpServer = options.ntpServer || 'pool.ntp.org'
-    this.ntpPort = options.ntpPort || 123
-    this.watchDogInterval = options.watchDogInterval || 5000
+    this.reconnectDelay = 10000;
+    this.disableRC = false;
+    this.enableRC = false;
+    this.ntpServer = options.ntpServer || 'pool.ntp.org';
+    this.ntpPort = options.ntpPort || 123;
+    this.watchDogInterval = options.watchDogInterval || 5000;
     this.GMT_TZ = RiscoComm.getGmtTimeZone();
   }
 
   private static getGmtTimeZone(): string {
-    const now = new Date()
-      const localTZ = (new Date(now.getFullYear(), 0, 1).getTimezoneOffset()) * -1
-      const hours = (Math.abs(Math.floor(localTZ / 60))).toLocaleString('en-US', {
-        minimumIntegerDigits: 2,
-        useGrouping: false
-      })
-      const minutes = (Math.abs(localTZ % 60)).toLocaleString('en-US', {
-        minimumIntegerDigits: 2,
-        useGrouping: false
-      })
-      const prefix = (localTZ >= 0) ? '+' : '-'
-      logger.log('debug', `Local GMT Timezone is : ${prefix}${hours}:${minutes}`)
-      return `${prefix}${hours}:${minutes}`
+    const now = new Date();
+    const localTZ = (new Date(now.getFullYear(), 0, 1).getTimezoneOffset()) * -1;
+    const hours = (Math.abs(Math.floor(localTZ / 60))).toLocaleString('en-US', {
+      minimumIntegerDigits: 2,
+      useGrouping: false,
+    });
+    const minutes = (Math.abs(localTZ % 60)).toLocaleString('en-US', {
+      minimumIntegerDigits: 2,
+      useGrouping: false,
+    });
+    const prefix = (localTZ >= 0) ? '+' : '-';
+    logger.log('debug', `Local GMT Timezone is : ${prefix}${hours}:${minutes}`);
+    return `${prefix}${hours}:${minutes}`;
   }
 
   private static looksLikePanelPwd(candidate: string): boolean {
@@ -121,68 +118,68 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
    * Complete initialization of the Socket and connection to the control Panel.
    */
   async initRPSocket() {
-    logger.log('verbose', `Start Connection to Panel`)
+    logger.log('verbose', `Start Connection to Panel`);
     //verify if listener exist before kill it
     if (this.tcpSocket !== undefined) {
-      logger.log('debug', `A TCP Socket is already created, clearing its listeners `)
-      this.tcpSocket.removeAllListeners()
+      logger.log('debug', `A TCP Socket is already created, clearing its listeners `);
+      this.tcpSocket.removeAllListeners();
     }
-    logger.log('debug', `TCP Socket is not already created, Create It`)
+    logger.log('debug', `TCP Socket is not already created, Create It`);
 
-    let tcpSocket: RiscoBaseSocket
+    let tcpSocket: RiscoBaseSocket;
     if (this.socketOptions.socketMode === 'proxy') {
-      tcpSocket = new RiscoProxyTCPSocket(this.socketOptions, this.commandsStream)
+      tcpSocket = new RiscoProxyTCPSocket(this.socketOptions, this.commandsStream);
     } else {
-      tcpSocket = new RiscoDirectTCPSocket(this.socketOptions, this.commandsStream)
+      tcpSocket = new RiscoDirectTCPSocket(this.socketOptions, this.commandsStream);
     }
 
-    this.tcpSocket = tcpSocket
-    logger.log('debug', `TCP Socket must be created now`)
+    this.tcpSocket = tcpSocket;
+    logger.log('debug', `TCP Socket must be created now`);
 
     this.tcpSocket.once('Disconnected', (allowReconnect: boolean) => {
-      logger.log('info', `TCP Socket Disconnected`)
+      logger.log('info', `TCP Socket Disconnected`);
       if (this.isDisconnecting || !allowReconnect) {
-        logger.log('info', `Won't attempt automatic reconnection`)
+        logger.log('info', `Won't attempt automatic reconnection`);
         if (this.autoReconnectTimer !== undefined) {
-          clearTimeout(this.autoReconnectTimer)
+          clearTimeout(this.autoReconnectTimer);
         }
       } else {
-        logger.log('info', `Automatic reconnection will be attempted in ${this.reconnectDelay} ms`)
+        logger.log('info', `Automatic reconnection will be attempted in ${this.reconnectDelay} ms`);
         if (this.autoReconnectTimer === undefined) {
           this.autoReconnectTimer = setTimeout(() => {
-            this.autoReconnectTimer = undefined
-            this.initRPSocket()
-          }, this.reconnectDelay)
+            this.autoReconnectTimer = undefined;
+            this.initRPSocket();
+          }, this.reconnectDelay);
         }
       }
-    })
+    });
 
     this.tcpSocket.on('DataReceived', async (cmdId: number | null, data: string) => {
-      await this.dataFromPanel(cmdId, data)
-    })
+      await this.dataFromPanel(cmdId, data);
+    });
 
     this.tcpSocket.on('DataSent', async (sequence_Id: number, data: string) => {
-      await this.DataFromPlugin(data, sequence_Id)
-    })
+      await this.DataFromPlugin(data, sequence_Id);
+    });
 
     this.tcpSocket.on('PanelConnected', async () => {
-      logger.log('debug', `Risco Panel Connected.`)
-      const panelType = await this.getPanelType()
-      this.panelInfo = await this.applyPanelOptions(panelType)
+      logger.log('debug', `Risco Panel Connected.`);
+      const panelType = await this.getPanelType();
+      this.panelInfo = await this.applyPanelOptions(panelType);
 
-      logger.log('info', `Panel info: ${this.panelInfo.PanelModel}/${this.panelInfo.PanelType}, FW ${this.panelInfo.PanelFW || 'Unknown'}`)
-      logger.log('info', `Panel options: ${this.panelInfo.MaxParts} parts, ${this.panelInfo.MaxZones} zones, ${this.panelInfo.MaxOutputs} outputs, Pir Cam support: ${this.panelInfo.SupportPirCam}`)
+      logger.log('info', `Panel info: ${this.panelInfo.PanelModel}/${this.panelInfo.PanelType}, FW ${this.panelInfo.PanelFW || 'Unknown'}`);
+      logger.log('info', `Panel options: ${this.panelInfo.MaxParts} parts, ${this.panelInfo.MaxZones} zones, ${this.panelInfo.MaxOutputs} outputs, Pir Cam support: ${this.panelInfo.SupportPirCam}`);
 
-      const CommandsArr = await this.verifyPanelConfiguration()
+      const CommandsArr = await this.verifyPanelConfiguration();
 
       if ((CommandsArr !== undefined) && (CommandsArr.length >= 1)) {
-        await this.tcpSocket?.modifyPanelConfig(CommandsArr)
+        await this.tcpSocket?.modifyPanelConfig(CommandsArr);
       }
       // Finally, Communication is ready
-      this.emit('PanelCommReady', this.panelInfo)
-    })
+      this.emit('PanelCommReady', this.panelInfo);
+    });
 
-    await this.tcpSocket.connect()
+    await this.tcpSocket.connect();
   }
 
   /*
@@ -192,45 +189,45 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
   async dataFromPanel(cmdId: number | null, data: string) {
     switch (true) {
       case (data.includes('ACK')):
-        break
+        break;
       case (data.startsWith('N')):
       case (data.startsWith('B')): {
-        const loglevel = (this.tcpSocket?.inCryptTest || this.tcpSocket?.inPasswordGuess) ? 'debug' : 'warn'
+        const loglevel = (this.tcpSocket?.inCryptTest || this.tcpSocket?.inPasswordGuess) ? 'debug' : 'warn';
         if ((Object.keys(RiscoError)).includes(data)) {
-          logger.log(loglevel, `Command[${cmdId}] Receipt of an error code: ${RiscoError[data]}`)
+          logger.log(loglevel, `Command[${cmdId}] Receipt of an error code: ${RiscoError[data]}`);
         } else {
-          logger.log(loglevel, `Command[${cmdId}] Data incomprehensible: ${data}`)
+          logger.log(loglevel, `Command[${cmdId}] Data incomprehensible: ${data}`);
         }
-        break
+        break;
       }
       case (data.startsWith('OSTT')):
-        logger.log('debug', `Command[${cmdId}] Data type: Output Status`)
-        this.emit('NewOutputStatusFromPanel', data)
-        break
+        logger.log('debug', `Command[${cmdId}] Data type: Output Status`);
+        this.emit('NewOutputStatusFromPanel', data);
+        break;
       case (data.startsWith('PSTT')):
-        logger.log('debug', `Command[${cmdId}] Data type: Partition Status`)
-        this.emit('NewPartitionStatusFromPanel', data)
-        break
+        logger.log('debug', `Command[${cmdId}] Data type: Partition Status`);
+        this.emit('NewPartitionStatusFromPanel', data);
+        break;
       case (data.startsWith('SSTT')):
-        logger.log('debug', `Command[${cmdId}] Data type: System Status`)
+        logger.log('debug', `Command[${cmdId}] Data type: System Status`);
         if (this.tcpSocket?.inProg && !data.includes('I')) {
-          this.tcpSocket.inProg = false
-          logger.log('debug', `Command[${cmdId}] Control unit exiting Programming mode.`)
+          this.tcpSocket.inProg = false;
+          logger.log('debug', `Command[${cmdId}] Control unit exiting Programming mode.`);
         }
-        this.emit('NewMBSystemStatusFromPanel', data)
-        break
+        this.emit('NewMBSystemStatusFromPanel', data);
+        break;
       case (data.startsWith('ZSTT')):
-        logger.log('debug', `Command[${cmdId}] Data type: Zone Status`)
-        this.emit('NewZoneStatusFromPanel', data)
-        break
+        logger.log('debug', `Command[${cmdId}] Data type: Zone Status`);
+        this.emit('NewZoneStatusFromPanel', data);
+        break;
       case (data.startsWith('CLOCK')):
-        logger.log('debug', `Command[${cmdId}] Data type: Clock`)
-        this.emit('Clock', data)
-        break
+        logger.log('debug', `Command[${cmdId}] Data type: Clock`);
+        this.emit('Clock', data);
+        break;
       case (data.includes('STT')):
         // for hardware state (Keypad, Zone Extension, ....)
-        logger.log('debug', `Command[${cmdId}] Data type: Hardware Status`)
-        break
+        logger.log('debug', `Command[${cmdId}] Data type: Hardware Status`);
+        break;
     }
   }
 
@@ -238,23 +235,23 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
    *  For debug only
    */
   async DataFromPlugin(data: string, Sequence_Id: number) {
-    logger.log('debug', `Command[${Sequence_Id}] Data Sent : ${data}`)
+    logger.log('debug', `Command[${Sequence_Id}] Data Sent : ${data}`);
   }
 
   /*
    * Retrieve and store the panel type
    */
   async getPanelType(): Promise<string> {
-    assertIsDefined(this.tcpSocket, 'tcpSocket')
-    let PType = undefined
+    assertIsDefined(this.tcpSocket, 'tcpSocket');
+    let PType = undefined;
     do {
-      PType = await this.tcpSocket.getResult('PNLCNF')
-    } while (PType === undefined)
-    return PType
+      PType = await this.tcpSocket.getResult('PNLCNF');
+    } while (PType === undefined);
+    return PType;
   }
 
   async applyPanelOptions(panelType: string): Promise<PanelInfo> {
-    const firmwareVersion = await this.GetPanelFwVersion(panelType)
+    const firmwareVersion = await this.GetPanelFwVersion(panelType);
     switch (panelType) {
       case PanelType.RW132:
         return {
@@ -265,7 +262,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
           MaxParts: 3,
           MaxOutputs: 4,
           SupportPirCam: false
-        }
+        };
       case PanelType.RW232:
         return {
           PanelType: panelType,
@@ -275,7 +272,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
           MaxParts: 3,
           MaxOutputs: 4,
           SupportPirCam: false
-        }
+        };
       case PanelType.RW332:
         return {
           PanelType: panelType,
@@ -285,13 +282,13 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
           MaxParts: 3,
           MaxOutputs: 4,
           SupportPirCam: false
-        }
+        };
       case PanelType.RP432: {
-        let MaxZones = 32
-        let MaxOutputs = 14
+        let MaxZones = 32;
+        let MaxOutputs = 14;
         if (this.compareVersion(firmwareVersion, '3.0') >= 0) {
-          MaxZones = 50
-          MaxOutputs = 32
+          MaxZones = 50;
+          MaxOutputs = 32;
         }
         return {
           PanelType: panelType,
@@ -301,23 +298,23 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
           MaxParts: 4,
           MaxOutputs: MaxOutputs,
           SupportPirCam: false
-        }
+        };
       }
       case PanelType.RP512: {
-        let MaxZones = 64
+        let MaxZones = 64;
         // At the moment, only zones up to 128.
         // This plugin does not currently manage zones requiring the activation of a license.
         if (this.compareVersion(firmwareVersion, '1.2.0.7') >= 0) {
-          MaxZones = 128
+          MaxZones = 128;
         }
 
-        let SupportPirCam: boolean
+        let SupportPirCam: boolean;
         if (this.compareVersion(firmwareVersion, '1.4.0.0') >= 0) {
-          logger.log('verbose', 'PirCam not supported for now.')
-          SupportPirCam = false
+          logger.log('verbose', 'PirCam not supported for now.');
+          SupportPirCam = false;
         } else {
-          logger.log('verbose', 'PirCam not supported for now (Too Low Firmware version).')
-          SupportPirCam = false
+          logger.log('verbose', 'PirCam not supported for now (Too Low Firmware version).');
+          SupportPirCam = false;
         }
 
         return {
@@ -328,11 +325,11 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
           MaxParts: 32,
           MaxOutputs: 262,
           SupportPirCam: SupportPirCam
-        }
+        };
 
       }
       default:
-        throw new Error(`Unsupported panel type : ${panelType}`)
+        throw new Error(`Unsupported panel type : ${panelType}`);
     }
   }
 
@@ -342,20 +339,20 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
    * been changed from some firmware versions.
    */
   async GetPanelFwVersion(panelType: string): Promise<string> {
-    assertIsDefined(this.tcpSocket, 'tcpSocket')
+    assertIsDefined(this.tcpSocket, 'tcpSocket');
     if (panelType === PanelType.RP432 || panelType === PanelType.RP512) {
-      let FwVersion = ''
+      let FwVersion = '';
       try {
-        FwVersion = await this.tcpSocket.getResult('FSVER?')
-        FwVersion = FwVersion.substring(0, FwVersion.indexOf(' '))
+        FwVersion = await this.tcpSocket.getResult('FSVER?');
+        FwVersion = FwVersion.substring(0, FwVersion.indexOf(' '));
       } catch (err) {
-        logger.log('error', `Cannot retrieve Firmware Version.`)
+        logger.log('error', `Cannot retrieve Firmware Version.`);
       }
-      FwVersion = FwVersion ? FwVersion : 'Undetermined'
-      logger.log('debug', `Panel Firmware Version : ${FwVersion}`)
-      return FwVersion
+      FwVersion = FwVersion ? FwVersion : 'Undetermined';
+      logger.log('debug', `Panel Firmware Version : ${FwVersion}`);
+      return FwVersion;
     }
-    return 'N/A'
+    return 'N/A';
   }
 
   /*
@@ -363,57 +360,57 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
    * @return  {Array of String}     String Command to be send to the Panel
    */
   async verifyPanelConfiguration(): Promise<string[]> {
-    assertIsDefined(this.tcpSocket, 'tcpSocket')
+    assertIsDefined(this.tcpSocket, 'tcpSocket');
     // Check the programming of the Risco Cloud according to the deactivation parameters
-    const CommandArray = []
-    logger.log('debug', `Checking the configuration of the control unit.`)
+    const CommandArray = [];
+    logger.log('debug', `Checking the configuration of the control unit.`);
 
     if (this.disableRC && !this.enableRC) {
 
       // Disabling RiscoCloud can lead to a time desynchronization if the control panel time
       // zone is not correctly configured (when the riscoCloud is configured, it is it
       // which keeps the system on time).
-      const RCloudStatus = await this.tcpSocket.getIntResult('ELASEN?')
+      const RCloudStatus = await this.tcpSocket.getIntResult('ELASEN?');
       if (RCloudStatus) {
-        CommandArray.push('ELASEN=0')
-        logger.log('debug', `Prepare Panel for Disabling RiscoCloud.`)
+        CommandArray.push('ELASEN=0');
+        logger.log('debug', `Prepare Panel for Disabling RiscoCloud.`);
       }
       // Check if the time zone is correctly configured
-      const PanelTZ = await this.tcpSocket.getIntResult('TIMEZONE?')
-      const PanelNtpServer = await this.tcpSocket.getResult('INTP?')
-      const PanelNtpPort = await this.tcpSocket.getIntResult('INTPP?')
-      const PanelNtpProto = await this.tcpSocket.getResult('INTPPROT?')
+      const PanelTZ = await this.tcpSocket.getIntResult('TIMEZONE?');
+      const PanelNtpServer = await this.tcpSocket.getResult('INTP?');
+      const PanelNtpPort = await this.tcpSocket.getIntResult('INTPP?');
+      const PanelNtpProto = await this.tcpSocket.getResult('INTPPROT?');
 
       if (TimeZoneStr[PanelTZ] !== this.GMT_TZ) {
-        const newPanelTZ = Object.keys(TimeZoneStr).find(key => TimeZoneStr[parseInt(key, 10)] === this.GMT_TZ)
-        CommandArray.push(`TIMEZONE=${newPanelTZ}`)
-        logger.log('debug', `Prepare Panel for Updating TimeZone.`)
+        const newPanelTZ = Object.keys(TimeZoneStr).find(key => TimeZoneStr[parseInt(key, 10)] === this.GMT_TZ);
+        CommandArray.push(`TIMEZONE=${newPanelTZ}`);
+        logger.log('debug', `Prepare Panel for Updating TimeZone.`);
       }
       if (PanelNtpServer !== this.ntpServer) {
-        CommandArray.push(`INTP=${this.ntpServer}`)
-        logger.log('debug', `Prepare Panel for Updating NTP Server Address.`)
+        CommandArray.push(`INTP=${this.ntpServer}`);
+        logger.log('debug', `Prepare Panel for Updating NTP Server Address.`);
       }
       if (PanelNtpPort !== this.ntpPort) {
-        CommandArray.push(`INTPP=${this.ntpPort}`)
-        logger.log('debug', `Prepare Panel for Updating NTP Server Port.`)
+        CommandArray.push(`INTPP=${this.ntpPort}`);
+        logger.log('debug', `Prepare Panel for Updating NTP Server Port.`);
       }
       if (PanelNtpProto !== '1') {
-        CommandArray.push('INTPPROT=1')
-        logger.log('debug', `Prepare Panel for Enabling Server.`)
+        CommandArray.push('INTPPROT=1');
+        logger.log('debug', `Prepare Panel for Enabling Server.`);
       }
     } else if (this.enableRC && !this.disableRC) {
       // Enabling RiscoCloud
-      const RCloudStatus = await this.tcpSocket.getIntResult('ELASEN?')
+      const RCloudStatus = await this.tcpSocket.getIntResult('ELASEN?');
       if (!RCloudStatus) {
-        CommandArray.push('ELASEN=1')
-        logger.log('debug', `Enabling RiscoCloud.`)
+        CommandArray.push('ELASEN=1');
+        logger.log('debug', `Enabling RiscoCloud.`);
       }
     }
 
     // if ((this.panelInfo?.PanelType !== PanelType.RP432) && (this.Panel_Type !== PanelType.RP512) && (this.SupportPirCam)) {
     //   //Check 'Photo Server' Config
     // }
-    return CommandArray
+    return CommandArray;
   }
 
   /*
@@ -423,33 +420,33 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
    */
   private compareVersion(vPanel: string, vNewCapacity: string): number {
     if (vPanel === vNewCapacity) {
-      return 0
+      return 0;
     }
-    const vPanel_components = vPanel.split('.')
-    const vNewCapacity_components = vNewCapacity.split('.')
-    const len = Math.min(vPanel_components.length, vNewCapacity_components.length)
+    const vPanel_components = vPanel.split('.');
+    const vNewCapacity_components = vNewCapacity.split('.');
+    const len = Math.min(vPanel_components.length, vNewCapacity_components.length);
 
     // loop while the components are equal
     for (let i = 0; i < len; i++) {
       // A bigger than B
       if (parseInt(vPanel_components[i]) > parseInt(vNewCapacity_components[i])) {
-        return 1
+        return 1;
       }
       // B bigger than A
       if (parseInt(vPanel_components[i]) < parseInt(vNewCapacity_components[i])) {
-        return -1
+        return -1;
       }
     }
-    return 0
+    return 0;
   }
 
   /*
    * Causes the TCP socket to disconnect
    */
   async disconnect() {
-    this.isDisconnecting = true
+    this.isDisconnecting = true;
     if (this.tcpSocket && this.tcpSocket.isPanelSocketConnected) {
-      await this.tcpSocket.disconnect(false)
+      await this.tcpSocket.disconnect(false);
     }
   }
 
@@ -458,11 +455,11 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
    * in the class Risco_DirectTCP_Socket
    */
   async disableRiscoCloud() {
-    assertIsDefined(this.tcpSocket, 'tcpSocket')
+    assertIsDefined(this.tcpSocket, 'tcpSocket');
     if (this.disableRC) {
-      await this.tcpSocket.updateRiscoCloud(false)
+      await this.tcpSocket.updateRiscoCloud(false);
     } else {
-      logger.log('debug', `Disabling RiscoCloud functionality is not allowed.`)
+      logger.log('debug', `Disabling RiscoCloud functionality is not allowed.`);
     }
   }
 
@@ -471,11 +468,11 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
    * in the class Risco_DirectTCP_Socket
    */
   async enableRiscoCloud() {
-    assertIsDefined(this.tcpSocket, 'tcpSocket')
+    assertIsDefined(this.tcpSocket, 'tcpSocket');
     if (this.enableRC) {
-      await this.tcpSocket.updateRiscoCloud(true)
+      await this.tcpSocket.updateRiscoCloud(true);
     } else {
-      logger.log('debug', `Enabling RiscoCloud functionality is not allowed.`)
+      logger.log('debug', `Enabling RiscoCloud functionality is not allowed.`);
     }
   }
 
@@ -485,132 +482,72 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
    * @return  {zones}    ZoneList Object     Populated Object or new Object if fails
    */
   async GetAllZonesData(): Promise<ZoneList> {
-    assertIsDefined(this.tcpSocket, 'tcpSocket')
-    assertIsDefined(this.panelInfo, 'panelInfo')
-    logger.log('debug', `Retrieving the configuration of the Zones.`)
-    const zones = new ZoneList(this.panelInfo.MaxZones, this)
-    const MaxZ = this.panelInfo.MaxZones
-    for (let i = 0; i < (MaxZ / 8); i++) {
-      const min = (i * 8) + 1
-      let max = ((i + 1) * 8)
-      max = (max > MaxZ) ? MaxZ : max
-
-      const ZTypeResult = await this.tcpSocket.getResult(`ZTYPE*${min}:${max}?`)
-      const ZType = ZTypeResult.replace(/ /g, '').split('\t')
-      const ZPartsResult = await this.tcpSocket.getResult(`ZPART&*${min}:${max}?`)
-      const ZParts = ZPartsResult.replace(/ /g, '').split('\t')
-      const ZGroupsResult = await this.tcpSocket.getResult(`ZAREA&*${min}:${max}?`)
-      const ZGroups = ZGroupsResult.replace(/ /g, '').split('\t')
-      const ZLabelsResult = await this.tcpSocket.getResult(`ZLBL*${min}:${max}?`)
-      const ZLabels = ZLabelsResult.split('\t')
-      const ZStatusResult = await this.tcpSocket.getResult(`ZSTT*${min}:${max}?`)
-      const ZStatus = ZStatusResult.replace(/ /g, '').split('\t')
-      const ZTechno = new Array(max - min + 1).fill(0)
-      for (let j = 0; j < (max - min + 1); j++) {
-        ZTechno[j] = await this.tcpSocket.getResult(`ZLNKTYP${min + j}?`)
-      }
-
-      for (let j = 0; j < (max - min + 1); j++) {
-        const Item = zones.byId(min + j)
-        Item.Id = min + j
-        Item.Label = (ZLabels[j] || '').trim()
-        Item.Type = parseInt(ZType[j], 10)
-        Item.Techno = ZTechno[j]
-        Item.setPartsFromString(ZParts[j])
-        Item.setGroupsFromString(ZGroups[j])
-        Item.Status = ZStatus[j]
+    assertIsDefined(this.tcpSocket, 'tcpSocket');
+    assertIsDefined(this.panelInfo, 'panelInfo');
+    logger.log('info', `Retrieving zones configuration`);
+    const zones = new ZoneList(this.panelInfo.MaxZones, this);
+    for (let i = 1; i <= this.panelInfo.MaxZones; i++) {
+      const zone = await this.getZoneStatus(i, zones);
+      if (!zone) {
+        logger.log('info', `output ${i} does not exists, stopping outputs discovery`);
+        break;
       }
     }
-    return zones
+    return zones;
   }
 
   /*
    * Queries the panel to retrieve up to date information for specified zone
    * @param   {Integer}     Zone Id           Id of the Selected Zone
    * @param   {ZoneList}    ZoneList Object
-   * @return  {Zones}       Zone Object       Object representing the Zone
+   * @return  {Zone}       Zone Object       Object representing the Zone
    */
-  async getZoneStatus(id: number, zones: ZoneList): Promise<Zone> {
-    logger.log('debug', `Retrieving the zone's status.`)
-    assertIsDefined(this.tcpSocket, 'tcpSocket')
-    const ZType = parseInt(await this.tcpSocket.getResult(`ZTYPE*${id}?`), 10)
-    const ZParts = await this.tcpSocket.getResult(`ZPART&*${id}?`)
-    const ZGroups = await this.tcpSocket.getResult(`ZAREA&*${id}?`)
-    const ZLabels = await this.tcpSocket.getResult(`ZLBL*${id}?`)
-    const ZStatus = await this.tcpSocket.getResult(`ZSTT*${id}?`)
-    let ZTechno = await this.tcpSocket.getResult(`ZLNKTYP${id}?`)
-    //TODO: use constants.RiscoError
-    ZTechno = (!ZTechno.startsWith('N')) ? ZTechno : 'E'
+  async getZoneStatus(id: number, zones: ZoneList): Promise<Zone | undefined> {
+    logger.log('debug', `Retrieving zone ${id} data`);
+    assertIsDefined(this.tcpSocket, 'tcpSocket');
+    const ZTypeStr = await this.tcpSocket.getResult(`ZTYPE*${id}?`);
+    const errorCheck = this.isAnyAnError(ZTypeStr);
+    if (errorCheck[0]) {
+      logger.log('warn', `Got error while fetching zone ${id} status data: ${errorCheck[1]}`);
+      return undefined;
+    }
+    const ZParts = await this.tcpSocket.getResult(`ZPART&*${id}?`);
+    const ZGroups = await this.tcpSocket.getResult(`ZAREA&*${id}?`);
+    const ZLabels = await this.tcpSocket.getResult(`ZLBL*${id}?`);
+    const ZStatus = await this.tcpSocket.getResult(`ZSTT*${id}?`);
+    let ZTechno = await this.tcpSocket.getResult(`ZLNKTYP${id}?`);
 
-    const Item = zones.byId(id)
-    Item.Label = ZLabels.trim()
-    Item.Type = ZType
-    Item.Techno = ZTechno
-    Item.setPartsFromString(ZParts)
-    Item.setGroupsFromString(ZGroups)
-    Item.Status = ZStatus
-    return Item
+    const ZType = parseInt(await this.tcpSocket.getResult(`ZTYPE*${id}?`), 10);
+
+    ZTechno = (!ZTechno.startsWith('N')) ? ZTechno : 'E';
+
+    const Item = zones.byId(id);
+    Item.Label = ZLabels.trim();
+    Item.Type = ZType;
+    Item.Techno = ZTechno;
+    Item.setPartsFromString(ZParts);
+    Item.setGroupsFromString(ZGroups);
+    Item.Status = ZStatus;
+    return Item;
   }
 
   /*
    * Queries the panel to retrieve information from all outputs
-   * @param   {OutputList}    OutputList Object     Empty Object
    * @return  {OutputList}    OutputList Object     Populated Object or new Object if fails
    */
   async getAllOutputsData(): Promise<OutputList> {
-    assertIsDefined(this.tcpSocket, 'tcpSocket')
-    assertIsDefined(this.panelInfo, 'panelInfo')
-    logger.log('debug', `Retrieving the configuration of the Outputs.`)
-    const outputs = new OutputList(this.panelInfo.MaxOutputs, this)
-    const MaxO = this.panelInfo.MaxOutputs
-    const groups = true
-    if (groups) {
-      for (let i = 0; i < (MaxO / 8); i++) {
-        const min = (i * 8) + 1
-        let max = ((i + 1) * 8)
-        max = (max > MaxO) ? MaxO : max
-
-        const OStatusResult = await this.tcpSocket.getResult(`OSTT*${min}:${max}?`)
-        const statusError = this.tcpSocket.getErrorCode(OStatusResult)
-        if (statusError && statusError[0]) {
-          if (statusError[0] === 'N19') {
-            logger.log('info', 'Output does not exists, stopping outputs discovery')
-            break
-          } else {
-            logger.log('warn', 'Unexpected output status error')
-            continue
-          }
-        }
-
-        const OTypeResult = await this.tcpSocket.getResult(`OTYPE*${min}:${max}?`)
-        const OType = OTypeResult.replace(/ /g, '').split('\t').map(it => parseInt(it, 10))
-        const OLabelsResult = await this.tcpSocket.getResult(`OLBL*${min}:${max}?`)
-        const OLabels = OLabelsResult.split('\t')
-        const OStatus = OStatusResult.replace(/ /g, '').split('\t')
-        const OGropsResult = await this.tcpSocket.getResult(`OGROP*${min}:${max}?`)
-        const OGrops = OGropsResult.replace(/ /g, '').split('\t')
-        for (let j = 0; j < (max - min + 1); j++) {
-          const Item = outputs.byId(min + j)
-          Item.Id = min + j
-          Item.Label = OLabels[j].trim()
-          Item.Type = OType[j]
-          if (Item.Pulsed) {
-            const OPulseDelay = await this.tcpSocket.getResult(`OPULSE${min + j}?`)
-            Item.PulseDelay = parseInt(OPulseDelay.replace(/ /g, ''), 10) * 1000
-          } else {
-            Item.PulseDelay = 0
-          }
-          Item.Status = OStatus[j]
-          Item.UserUsable = OGrops[j] === '4'
-        }
+    assertIsDefined(this.tcpSocket, 'tcpSocket');
+    assertIsDefined(this.panelInfo, 'panelInfo');
+    logger.log('info', `Retrieving outputs configuration`);
+    const outputs = new OutputList(this.panelInfo.MaxOutputs, this);
+    for (let i = 1; i <= this.panelInfo.MaxOutputs; i++) {
+      const output = await this.getOutputStatus(i, outputs);
+      if (!output) {
+        logger.log('info', `Output ${i} does not exists, stopping outputs discovery`);
+        break;
       }
-    } else {
-      for (let i = 1; i <= this.panelInfo.MaxOutputs; i++) {
-        await this.getOutputStatus(i, outputs);
-      }
-
     }
-    return outputs
+    return outputs;
   }
 
   /*
@@ -619,57 +556,51 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
    * @param   {OutputList}  OutputList Object
    * @return  {Output}      Output Object     Object representing the Output
    */
-  async getOutputStatus(id: number, outputs: OutputList): Promise<Output> {
-    assertIsDefined(this.tcpSocket, 'tcpSocket')
-    logger.log('debug', `Retrieving the Output's status.`)
-    const OType = await this.tcpSocket.getResult(`OTYPE${id}?`)
-    const OLabels = await this.tcpSocket.getResult(`OLBL${id}?`)
-    const OGrops = await this.tcpSocket.getResult(`OGROP${id}?`)
-    const OStatus = await this.tcpSocket.getResult(`OSTT${id}?`)
-
-    const output = outputs.byId(id)
-    output.Label = OLabels.trim()
-    output.Type = parseInt(OType, 10)
-    output.Status = OStatus
-    if (output.Pulsed) {
-      const OPulseDelay = await this.tcpSocket.getResult(`OPULSE${id}?`)
-      output.PulseDelay = parseInt(OPulseDelay.replace(/ /g, ''), 10) * 1000
-    } else {
-      output.PulseDelay = 0
+  async getOutputStatus(id: number, outputs: OutputList): Promise<Output | undefined> {
+    assertIsDefined(this.tcpSocket, 'tcpSocket');
+    logger.log('debug', `Retrieving output ${id} data`);
+    const OStatus = await this.tcpSocket.getResult(`OSTT${id}?`);
+    const errorCheck = this.isAnyAnError(OStatus);
+    if (errorCheck[0]) {
+      logger.log('warn', `Got error while fetching output ${id} data: ${errorCheck[1]}`);
+      return undefined;
     }
-    output.UserUsable = OGrops === '4'
-    return output
+    const OType = await this.tcpSocket.getResult(`OTYPE${id}?`);
+    const OLabels = await this.tcpSocket.getResult(`OLBL${id}?`);
+    const OGrops = await this.tcpSocket.getResult(`OGROP${id}?`);
+
+
+    const output = outputs.byId(id);
+    output.Label = OLabels.trim();
+    output.Type = parseInt(OType, 10);
+    output.Status = OStatus;
+    if (output.Pulsed) {
+      const OPulseDelay = await this.tcpSocket.getResult(`OPULSE${id}?`);
+      output.PulseDelay = parseInt(OPulseDelay.replace(/ /g, ''), 10) * 1000;
+    } else {
+      output.PulseDelay = 0;
+    }
+    output.UserUsable = OGrops === '4';
+    return output;
   }
 
   /*
    * Queries the panel to retrieve information from all Partition
-   * @param   {PartitionsList}    PartitionsList Object     Empty Object
    * @return  {PartitionsList}    PartitionsList Object     Populated Object or new Object if fails
    */
   async getAllPartitionsData(): Promise<PartitionList> {
-    assertIsDefined(this.tcpSocket, 'tcpSocket')
-    assertIsDefined(this.panelInfo, 'panelInfo')
-    logger.log('debug', `Retrieving the configuration of the Partitions.`)
-    const partitions = new PartitionList(this.panelInfo.MaxParts, this)
-    const MaxP = this.panelInfo.MaxParts
-    for (let i = 0; i < (MaxP / 8); i++) {
-      const min = (i * 8) + 1
-      let max = ((i + 1) * 8)
-      max = (max > MaxP) ? MaxP : max
-
-      const PLabelsResult = await this.tcpSocket.getResult(`PLBL*${min}:${max}?`)
-      const PLabels = PLabelsResult.split('\t')
-      const PStatusResult = await this.tcpSocket.getResult(`PSTT*${min}:${max}?`)
-      const PStatus = PStatusResult.replace(/ /g, '').split('\t')
-
-      for (let j = 0; j < (max - min + 1); j++) {
-        const Item = partitions.byId(min + j)
-        Item.Id = min + j
-        Item.Label = (PLabels[j] || '').trim()
-        Item.Status = PStatus[j]
+    assertIsDefined(this.tcpSocket, 'tcpSocket');
+    assertIsDefined(this.panelInfo, 'panelInfo');
+    logger.log('info', `Retrieving partitions configuration`);
+    const partitions = new PartitionList(this.panelInfo.MaxParts, this);
+    for (let i = 1; i <= this.panelInfo.MaxParts; i++) {
+      const output = await this.getPartitionsStatus(i, partitions);
+      if (!output) {
+        logger.log('info', `Partition ${i} does not exists, stopping partitions discovery`);
+        break;
       }
     }
-    return partitions
+    return partitions;
   }
 
   /*
@@ -678,17 +609,22 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
    * @param   {PartitionsList}    PartitionsList Object
    * @return  {Output}            Partition Object        Object representing the Partition
    */
-  async getPartitionsStatus(id: number, partitions: PartitionList): Promise<Partition> {
-    assertIsDefined(this.tcpSocket, 'tcpSocket')
-    logger.log('debug', `Retrieving the Partition's status.`)
-    const PLabels = await this.tcpSocket.getResult(`PLBL${id}?`)
-    const PStatus = await this.tcpSocket.getResult(`PSTT${id}?`)
+  async getPartitionsStatus(id: number, partitions: PartitionList): Promise<Partition | undefined> {
+    assertIsDefined(this.tcpSocket, 'tcpSocket');
+    logger.log('debug', `Retrieving partition ${id} data`);
+    const PLabels = await this.tcpSocket.getResult(`PLBL${id}?`);
+    const errorCheck = this.isAnyAnError(PLabels);
+    if (errorCheck[0]) {
+      logger.log('warn', `Got error while fetching partition${id} data: ${errorCheck[1]}`);
+      return undefined;
+    }
+    const PStatus = await this.tcpSocket.getResult(`PSTT${id}?`);
 
-    const partition = partitions.byId(id)
-    partition.Label = PLabels.trim()
-    partition.Status = PStatus
+    const partition = partitions.byId(id);
+    partition.Label = PLabels.trim();
+    partition.Status = PStatus;
 
-    return partition
+    return partition;
   }
 
   /*
@@ -696,12 +632,22 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
    * @return  {MBSystem}    MBSystem Object     Populated Object or new Object if fails
    */
   async getSystemData(): Promise<MBSystem> {
-    assertIsDefined(this.tcpSocket, 'tcpSocket')
-    logger.log('debug', `Retrieving System's Information.`)
-    const SLabel = await this.tcpSocket.getResult(`SYSLBL?`)
-    const SStatus = await this.tcpSocket.getResult(`SSTT?`)
+    assertIsDefined(this.tcpSocket, 'tcpSocket');
+    logger.log('info', `Retrieving System Information`);
+    const SLabel = await this.tcpSocket.getResult(`SYSLBL?`);
+    const SStatus = await this.tcpSocket.getResult(`SSTT?`);
 
-    return new MBSystem(SLabel, SStatus)
+    return new MBSystem(SLabel, SStatus);
+  }
+
+  isAnyAnError(...values: string[]): [boolean, string | undefined] {
+    for (const val of values) {
+      const statusError = this.tcpSocket!!.getErrorCode(val);
+      if (statusError) {
+        return [true, statusError[0]];
+      }
+    }
+    return [false, undefined];
   }
 
   /*
@@ -710,11 +656,11 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
   watchDog() {
     this.watchDogTimer = setTimeout(async () => {
       if (this.tcpSocket?.isPanelSocketConnected && !this.isDisconnecting) {
-        this.watchDog()
+        this.watchDog();
         if (!this.tcpSocket.inProg && !this.tcpSocket.inCryptTest) {
-          await this.tcpSocket.sendCommand(`CLOCK`)
+          await this.tcpSocket.sendCommand(`CLOCK`);
         }
       }
-    }, this.watchDogInterval)
+    }, this.watchDogInterval);
   }
 }
