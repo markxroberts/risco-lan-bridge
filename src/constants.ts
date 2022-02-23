@@ -32,6 +32,7 @@ export const CRCArray_base64 = 'WzAsNDkzNDUsNDk1MzcsMzIwLDQ5OTIxLDk2MCw2NDAsNDk3
 
 // Type of Panel
 export enum PanelType {
+    RW032 = 'RW032',
     RW132 = 'RW132',
     RW232 = 'RW232',
     RW332 = 'RW332',
