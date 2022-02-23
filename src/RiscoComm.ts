@@ -121,20 +121,17 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
     logger.log('verbose', `Start Connection to Panel`);
     //verify if listener exist before kill it
     if (this.tcpSocket !== undefined) {
-      logger.log('debug', `A TCP Socket is already created, clearing its listeners `);
+      logger.log('debug', `A TCP Socket already exists, clearing its listeners before creating a new one`);
       this.tcpSocket.removeAllListeners();
     }
-    logger.log('debug', `TCP Socket is not already created, Create It`);
-
     let tcpSocket: RiscoBaseSocket;
     if (this.socketOptions.socketMode === 'proxy') {
       tcpSocket = new RiscoProxyTCPSocket(this.socketOptions, this.commandsStream);
     } else {
       tcpSocket = new RiscoDirectTCPSocket(this.socketOptions, this.commandsStream);
     }
-
     this.tcpSocket = tcpSocket;
-    logger.log('debug', `TCP Socket must be created now`);
+    logger.log('debug', `TCP Socket created`);
 
     this.tcpSocket.once('Disconnected', (allowReconnect: boolean) => {
       logger.log('info', `TCP Socket Disconnected`);
