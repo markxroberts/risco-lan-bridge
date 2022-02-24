@@ -530,8 +530,6 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
 
     const ZType = parseInt(await this.tcpSocket.getResult(`ZTYPE*${id}?`), 10);
 
-    ZTechno = (!ZTechno.startsWith('N')) ? ZTechno : 'E';
-
     const Item = zones.byId(id);
     Item.Label = ZLabels.trim();
     Item.Type = ZType;
