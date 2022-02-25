@@ -11,6 +11,7 @@ import { PanelOptions } from './RiscoPanel';
 import { TypedEmitter } from 'tiny-typed-emitter';
 import { RiscoProxyTCPSocket } from './RiscoProxySocket';
 import fs, { WriteStream } from 'fs';
+import { RiscoCommandError } from './RiscoError';
 
 export class PanelInfo {
   public PanelType!: string;
@@ -665,10 +666,18 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
   watchDog() {
     this.watchDogTimer = setTimeout(async () => {
       if (this.tcpSocket?.isPanelSocketConnected && !this.isDisconnecting) {
-        this.watchDog();
         if (!this.tcpSocket.inProg && !this.tcpSocket.inCryptTest) {
-          await this.tcpSocket.sendCommand(`CLOCK`);
+          try {
+            await this.tcpSocket.sendCommand(`CLOCK`);
+          } catch (e) {
+            if (e instanceof RiscoCommandError) {
+              logger.log('warn', 'Failed to send CLOCK command: ' + e);
+            } else {
+              throw e;
+            }
+          }
         }
+        this.watchDog();
       }
     }, this.watchDogInterval);
   }
