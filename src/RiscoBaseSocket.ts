@@ -6,6 +6,7 @@ import { assertIsDefined, assertIsTrue } from './Assertions';
 import { RiscoCrypt } from './RiscoCrypt';
 import { TypedEmitter } from 'tiny-typed-emitter';
 import { WriteStream } from 'fs';
+import { RiscoCommandError } from './RiscoError';
 
 interface RiscoSocketEvents {
   'BadCRCLimit': () => void;
@@ -300,7 +301,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
       if (cmdCtx.receivedStr !== undefined) {
         return cmdCtx.receivedStr;
       } else {
-        throw Error(`Failed to process command ${JSON.stringify(cmdCtx)}`);
+        throw new RiscoCommandError(cmdCtx, 'TIMEOUT');
       }
     }
   }
@@ -664,7 +665,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
 
 }
 
-interface CommandContext {
+export interface CommandContext {
   panelId: number;
   commandId: number;
   commandStr: string;
