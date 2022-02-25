@@ -36,6 +36,8 @@ export class RiscoPanel extends EventEmitter {
   partitions!: PartitionList;
   mbSystem!: MBSystem;
 
+  devicesDiscoveryCompleted = false
+
   constructor(options: PanelOptions) {
     super();
     if (options.logger) {
@@ -44,19 +46,24 @@ export class RiscoPanel extends EventEmitter {
     this.riscoComm = new RiscoComm(options);
 
     this.riscoComm.on('PanelCommReady', async () => {
-      logger.log('info', `Starting devices discovery`);
-      try {
-        this.mbSystem = await this.riscoComm.getSystemData();
-        this.zones = await this.riscoComm.GetAllZonesData();
-        this.outputs = await this.riscoComm.getAllOutputsData();
-        this.partitions = await this.riscoComm.getAllPartitionsData();
-      } catch (e) {
-        logger.log('error', e);
-        logger.log('error', `Error caught during devices discovery, retrying`);
-        this.riscoComm.tcpSocket?.disconnect(true);
-        return;
+      if (!this.devicesDiscoveryCompleted) {
+        logger.log('info', `Starting devices discovery`);
+        try {
+          this.mbSystem = await this.riscoComm.getSystemData();
+          this.zones = await this.riscoComm.GetAllZonesData();
+          this.outputs = await this.riscoComm.getAllOutputsData();
+          this.partitions = await this.riscoComm.getAllPartitionsData();
+          this.devicesDiscoveryCompleted = true
+        } catch (e) {
+          logger.log('error', e);
+          logger.log('error', `Error caught during devices discovery, retrying`);
+          this.riscoComm.tcpSocket?.disconnect(true);
+          return;
+        }
+        logger.log('debug', `End of devices discovery`);
+      } else {
+        logger.log('info', 'Devices discovery already done')
       }
-      logger.log('debug', `End of devices discovery`);
 
       logger.log('debug', `Starting watchdog`);
       this.riscoComm.watchDog();
