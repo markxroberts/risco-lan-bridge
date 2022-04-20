@@ -144,7 +144,7 @@ export class RiscoPanel extends EventEmitter {
 
     if (options.autoConnect != false) {
       logger.log('info', `autoConnect enabled, starting communication`);
-      this.riscoComm.initRPSocket();
+      this.connect().then(_ => () => {});
     } else {
       logger.log('info', `autoConnect disabled in configuration file, you must call connect() in order to initialize the connection.`);
     }
