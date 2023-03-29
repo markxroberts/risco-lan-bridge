@@ -27,6 +27,9 @@ panel.on('SystemInitComplete', () => {
 
   panel.zones.on('ZStatusChanged', (Id, EventStr) => {
     console.log(`ZStatusChanged: ${Id} ${EventStr}`);
+  
+  panel.outputs.on('OStatusChanged', (Id, EventStr) => {
+    console.log(`OStatusChanged: ${Id} ${EventStr}`);
   });
 });
 
