@@ -42,7 +42,7 @@ interface OutputEvents {
 export class Output extends TypedEmitter<OutputEvents> {
 
   Id: number
-  private RiscoComm: RiscoComm
+  RiscoComm: RiscoComm
   Label: string
   OStatus: string
 
