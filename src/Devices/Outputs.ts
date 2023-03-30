@@ -45,7 +45,6 @@ export class Output extends TypedEmitter<OutputEvents> {
   RiscoComm: RiscoComm
   Label: string
   OStatus: string
-  Status: string
 
   get Pulsed(): boolean {
     return this.Type % 2 === 0
@@ -111,9 +110,15 @@ export class Output extends TypedEmitter<OutputEvents> {
               this.emit(`OStatusChanged`, this.Id, 'Pulsed')
               this.emit('Pulsed', this.Id)
             }
+            if (this.FirstStatus) {
+              this.emit('Pulsed', this.Id)
+            }
           } else {
             if (!this.FirstStatus) {
               this.emit(`OStatusChanged`, this.Id, 'Activated')
+              this.emit('Activated', this.Id)
+            }
+            if (this.FirstStatus) {
               this.emit('Activated', this.Id)
             }
           }
@@ -124,6 +129,9 @@ export class Output extends TypedEmitter<OutputEvents> {
           if (!this.Pulsed) {
             if (!this.FirstStatus) {
               this.emit(`OStatusChanged`, this.Id, 'Deactivated')
+              this.emit('Deactivated', this.Id)
+            }
+            if (this.FirstStatus) {
               this.emit('Deactivated', this.Id)
             }
           }
