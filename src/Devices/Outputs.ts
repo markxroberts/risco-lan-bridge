@@ -61,14 +61,14 @@ export class Output extends TypedEmitter<OutputEvents> {
   NeedUpdateConfig: boolean
   Active: boolean
 
-  constructor(Id: number, RiscoComm: RiscoComm, Label?: string, Type?: number, Status?: string) {
+  constructor(Id: number, RiscoComm: RiscoComm, Label?: string, Type?: number, OStatus?: string) {
     super()
     this.Id = Id
     this.RiscoComm = RiscoComm
     this.Label = Label || ''
 
     this.Type = Type || 0
-    this.OStatus = Status || '--'
+    this.OStatus = OStatus || '--'
 
     this.PulseDelay = 0
     this.FirstStatus = true
