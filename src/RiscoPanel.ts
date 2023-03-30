@@ -113,7 +113,7 @@ export class RiscoPanel extends EventEmitter {
       this.riscoComm.on('NewOutputStatusFromPanel', (data) => {
         const OId = parseInt(data.substring(data.indexOf('OSTT') + 4, data.indexOf('=')), 10);
         if (!isNaN(OId)) {
-          this.outputs.byId(OId).Status = data.substring(data.indexOf('=') + 1);
+          this.outputs.byId(OId).OStatus = data.substring(data.indexOf('=') + 1);
         }
       });
       this.riscoComm.on('NewPartitionStatusFromPanel', (data) => {

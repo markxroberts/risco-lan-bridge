@@ -149,9 +149,9 @@ export class Output extends TypedEmitter<OutputEvents> {
         const ActOutputResult = await this.RiscoComm.tcpSocket.getAckResult(`ACTUO${this.Id}`)
         // Because Pulsed Output have no Status Update from Panel
         if (this.Pulsed) {
-          this.Status = 'a'
+          this.OStatus = 'a'
           setTimeout(() => {
-            this.Status = '-'
+            this.OStatus = '-'
           }, this.PulseDelay)
         }
         return ActOutputResult
