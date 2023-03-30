@@ -79,7 +79,7 @@ export class Output extends TypedEmitter<OutputEvents> {
     this.Active = false
 
     if (this.OStatus !== '--') {
-      this.Status = this.OStatus
+      this.NewStatus = this.OStatus
     }
 
   }
@@ -99,7 +99,7 @@ export class Output extends TypedEmitter<OutputEvents> {
   //     return ((this.Pulsed) ? 'Pulse' : 'Latch');
   // }
 
-  set Status(value: string) {
+  set NewStatus(value: string) {
     if (value) {
       const previousStateValue = this.Active
       if (value.includes('a')) {
