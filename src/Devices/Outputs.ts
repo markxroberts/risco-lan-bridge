@@ -100,7 +100,7 @@ export class Output extends TypedEmitter<OutputEvents> {
   // }
 
   set Status(value: string) {
-    if (value) {
+    if (value !== undefined) {
       const previousStateValue = this.Active
       if (value.includes('a')) {
         if (!previousStateValue) {
