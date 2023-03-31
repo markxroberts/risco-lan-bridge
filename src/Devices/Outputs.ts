@@ -103,7 +103,6 @@ export class Output extends TypedEmitter<OutputEvents> {
     if (value) {
       const previousStateValue = this.Active
       if (value.includes('a')) {
-        this.Active = true
         if (!previousStateValue) {
           if (this.Pulsed) {
             if (!this.FirstStatus) {
@@ -125,8 +124,8 @@ export class Output extends TypedEmitter<OutputEvents> {
             }
           }
         }
+        this.Active = true
       } else {
-        this.Active = false
         if (previousStateValue) {
           if (!this.Pulsed) {
             if (!this.FirstStatus) {
@@ -139,6 +138,7 @@ export class Output extends TypedEmitter<OutputEvents> {
             }
           }
         }
+        this.Active = false
       }
       this.FirstStatus = false
     }
