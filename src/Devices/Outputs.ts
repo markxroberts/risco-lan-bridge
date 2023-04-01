@@ -61,7 +61,7 @@ export class Output extends TypedEmitter<OutputEvents> {
   NeedUpdateConfig: boolean
   Active: boolean
 
-  constructor(Id: number, RiscoComm: RiscoComm, Label?: string, Type?: number, OStatus?: string) {
+  constructor(Id: number, RiscoComm: RiscoComm, Label?: string, Type?: number, Status?: string) {
     super()
     this.Id = Id
     this.RiscoComm = RiscoComm
@@ -100,22 +100,37 @@ export class Output extends TypedEmitter<OutputEvents> {
   // }
 
   set Status(value: string) {
-    if (value !== undefined) {
+    if (value) {
+      const previousStateValue = this.Active
       if (value.includes('a')) {
+        this.Active = true
+        if (!previousStateValue) {
           if (this.Pulsed) {
-            this.emit(`OStatusChanged`, this.Id, 'Pulsed')
-            this.emit('Pulsed', this.Id)
+            if (!this.FirstStatus) {
+              this.emit(`OStatusChanged`, this.Id, 'Pulsed')
+              this.emit('Pulsed', this.Id)
+            }
+          } else {
+            if (!this.FirstStatus) {
+              this.emit(`OStatusChanged`, this.Id, 'Activated')
+              this.emit('Activated', this.Id)
+            }
           }
-        } else {
-            this.emit(`OStatusChanged`, this.Id, 'Activated')
-            this.emit('Activated', this.Id)
         }
       } else {
-      if (!this.Pulsed) {
-        this.emit(`OStatusChanged`, this.Id, 'Deactivated')
-        this.emit('Deactivated', this.Id)
+        this.Active = false
+        if (previousStateValue) {
+          if (!this.Pulsed) {
+            if (!this.FirstStatus) {
+              this.emit(`OStatusChanged`, this.Id, 'Deactivated')
+              this.emit('Deactivated', this.Id)
+            }
+          }
+        }
       }
+      this.FirstStatus = false
     }
+
   }
 
   async toggleOutput(): Promise<boolean> {
