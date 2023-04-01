@@ -101,48 +101,21 @@ export class Output extends TypedEmitter<OutputEvents> {
 
   set Status(value: string) {
     if (value !== undefined) {
-      const previousStateValue = this.Active
       if (value.includes('a')) {
-        if (!previousStateValue) {
           if (this.Pulsed) {
-            if (!this.FirstStatus) {
-              this.emit(`OStatusChanged`, this.Id, 'Pulsed')
-              this.emit('Pulsed', this.Id)
-            }
-            if (this.FirstStatus) {
-              this.emit(`OStatusChanged`, this.Id, 'Pulsed')
-              this.emit('Pulsed', this.Id)
-            }
-          } else {
-            if (!this.FirstStatus) {
-              this.emit(`OStatusChanged`, this.Id, 'Activated')
-              this.emit('Activated', this.Id)
-            }
-            if (this.FirstStatus) {
-              this.emit(`OStatusChanged`, this.Id, 'Activated')
-              this.emit('Activated', this.Id)
-            }
+            this.emit(`OStatusChanged`, this.Id, 'Pulsed')
+            this.emit('Pulsed', this.Id)
           }
+        } else {
+            this.emit(`OStatusChanged`, this.Id, 'Activated')
+            this.emit('Activated', this.Id)
         }
-        this.Active = true
       } else {
-        if (previousStateValue) {
-          if (!this.Pulsed) {
-            if (!this.FirstStatus) {
-              this.emit(`OStatusChanged`, this.Id, 'Deactivated')
-              this.emit('Deactivated', this.Id)
-            }
-            if (this.FirstStatus) {
-              this.emit(`OStatusChanged`, this.Id, 'Deactivated')
-              this.emit('Deactivated', this.Id)
-            }
-          }
-        }
-        this.Active = false
+      if (!this.Pulsed) {
+        this.emit(`OStatusChanged`, this.Id, 'Deactivated')
+        this.emit('Deactivated', this.Id)
       }
-      this.FirstStatus = false
     }
-
   }
 
   async toggleOutput(): Promise<boolean> {
