@@ -99,6 +99,9 @@ export class Output extends EventEmitter {
   // get Type() {
   //     return ((this.Pulsed) ? 'Pulse' : 'Latch');
   // }
+  get Status(OStatus) {
+    return this.Status;
+  }
 
   set Status(value: string) {
     if (value) {
