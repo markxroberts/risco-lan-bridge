@@ -68,7 +68,7 @@ export class Output extends EventEmitter {
     this.Id = Id
     this.RiscoComm = RiscoComm
     this.Label = Label || ''
-    this.State = Status
+    this.State = this.Status
 
     this.Type = Type || 0
     this.OStatus = OStatus || '--'
