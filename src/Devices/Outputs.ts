@@ -100,7 +100,7 @@ export class Output extends EventEmitter {
   //     return ((this.Pulsed) ? 'Pulse' : 'Latch');
   // }
   get Status() {
-    return this.Status;
+    return this.State;
   }
 
   set Status(value: string) {
