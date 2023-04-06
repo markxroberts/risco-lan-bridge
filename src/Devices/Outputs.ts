@@ -154,7 +154,7 @@ export class Output extends EventEmitter {
 
 }
 
-export class OutputList extends TypedEmitter<OutputEvents> {
+export class OutputList extends EventEmitter {
 
   readonly values: Output[]
 
