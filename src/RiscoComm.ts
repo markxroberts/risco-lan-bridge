@@ -569,8 +569,8 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
   async getOutputStatus(id: number, outputs: OutputList): Promise<Output | undefined> {
     assertIsDefined(this.tcpSocket, 'tcpSocket');
     logger.log('debug', `Retrieving output ${id} data`);
-    const OStatus = await this.tcpSocket.getResult(`OSTT${id}?`);
-    const errorCheck = this.isAnyAnError(OStatus);
+    const OpStatus = await this.tcpSocket.getResult(`OSTT${id}?`);
+    const errorCheck = this.isAnyAnError(OpStatus);
     if (errorCheck[0]) {
       logger.log('warn', `Got error while fetching output ${id} data: ${errorCheck[1]}`);
       return undefined;
@@ -578,7 +578,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
     const OType = await this.tcpSocket.getResult(`OTYPE${id}?`);
     const OLabels = await this.tcpSocket.getResult(`OLBL${id}?`);
     const OGrops = await this.tcpSocket.getResult(`OGROP${id}?`);
-
+    const OStatus = await this.tcpSocket.getResult(`OSTT${id}?`);
 
     const output = outputs.byId(id);
     output.Label = OLabels.trim();
