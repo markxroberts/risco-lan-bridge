@@ -569,8 +569,8 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
   async getOutputStatus(id: number, outputs: OutputList): Promise<Output | undefined> {
     assertIsDefined(this.tcpSocket, 'tcpSocket');
     logger.log('debug', `Retrieving output ${id} data`);
-    const OpStatus = await this.tcpSocket.getResult(`OSTT${id}?`);
-    const errorCheck = this.isAnyAnError(OpStatus);
+    const OStatus = await this.tcpSocket.getResult(`OSTT${id}?`);
+    const errorCheck = this.isAnyAnError(OStatus);
     if (errorCheck[0]) {
       logger.log('warn', `Got error while fetching output ${id} data: ${errorCheck[1]}`);
       return undefined;
@@ -583,7 +583,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
     const output = outputs.byId(id);
     output.Label = OLabels.trim();
     output.Type = parseInt(OType, 10);
-    output.Status = OStatus;
+    output.OStatus = OStatus;
     if (output.Pulsed) {
       const OPulseDelay = await this.tcpSocket.getResult(`OPULSE${id}?`);
       output.PulseDelay = parseInt(OPulseDelay.replace(/ /g, ''), 10) * 1000;
