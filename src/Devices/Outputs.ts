@@ -78,10 +78,6 @@ export class Output extends EventEmitter {
     // a
     this.Active = false
 
-    get Status() {
-      return this.status
-    }
-
   }
 
   // /*
@@ -130,7 +126,9 @@ export class Output extends EventEmitter {
       }
       this.FirstStatus = false
     }
-
+  }
+  get Status() {
+    return this.status;
   }
 
   async toggleOutput(): Promise<boolean> {
