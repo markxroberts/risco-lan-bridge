@@ -45,7 +45,6 @@ export class Output extends EventEmitter {
   RiscoComm: RiscoComm
   Label: string
   OStatus: string
-  status: string
 
   get Pulsed(): boolean {
     return this.Type % 2 === 0
@@ -70,7 +69,6 @@ export class Output extends EventEmitter {
 
     this.Type = Type || 0
     this.OStatus = OStatus || '--'
-    this.status = OStatus || ''
 
     this.PulseDelay = 0
     this.FirstStatus = true
@@ -80,6 +78,9 @@ export class Output extends EventEmitter {
     // a
     this.Active = false
 
+    if (this.OStatus !== '--') {
+      this.Status = this.OStatus
+    }
   }
 
   // /*
@@ -127,13 +128,7 @@ export class Output extends EventEmitter {
         }
       }
       this.FirstStatus = false
-    } else {
-      this.emit(`OStatusChanged`, this.Id, 'None')
-      this.emit('None', this.Id)
     }
-  }
-  get Status() {
-    return this.status;
   }
 
   async toggleOutput(): Promise<boolean> {
