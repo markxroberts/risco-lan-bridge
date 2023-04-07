@@ -78,8 +78,8 @@ export class Output extends EventEmitter {
     // a
     this.Active = false
 
-    if (this.OStatus !== '--') {
-      this.Status = this.OStatus
+  //  if (this.OStatus !== '--') {
+  //    this.Status = this.OStatus
     }
 
   }
