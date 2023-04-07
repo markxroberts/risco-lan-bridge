@@ -70,7 +70,7 @@ export class Output extends EventEmitter {
 
     this.Type = Type || 0
     this.OStatus = OStatus || '--'
-    this.status = OStatus
+    this.status = OStatus || ''
 
     this.PulseDelay = 0
     this.FirstStatus = true
