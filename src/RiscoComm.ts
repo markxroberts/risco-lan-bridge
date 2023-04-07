@@ -1,7 +1,7 @@
 import { RiscoBaseSocket, SocketOptions } from './RiscoBaseSocket';
 import { RiscoDirectTCPSocket } from './RiscoDirectSocket';
 import { PanelType, RiscoError, TimeZoneStr } from './constants';
-import { OutputList } from './Devices/Outputs';
+import { Output, OutputList } from './Devices/Outputs';
 import { Zone, ZoneList } from './Devices/Zones';
 import { Partition, PartitionList } from './Devices/Partitions';
 import { MBSystem } from './Devices/System';
