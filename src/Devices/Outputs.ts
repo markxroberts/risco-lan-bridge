@@ -28,7 +28,7 @@
 'use strict'
 
 import { RiscoComm } from '../RiscoComm'
-import { EventEmitter } from 'events'
+import { TypedEmitter } from 'tiny-typed-emitter'
 import { logger } from '../Logger'
 import { assertIsDefined } from '../Assertions'
 
@@ -39,7 +39,7 @@ interface OutputEvents {
   'Deactivated': (outputId: number) => void
 }
 
-export class Output extends EventEmitter {
+export class Output extends TypedEmitter<OutputEvents> {
 
   Id: number
   RiscoComm: RiscoComm
@@ -154,7 +154,7 @@ export class Output extends EventEmitter {
 
 }
 
-export class OutputList extends EventEmitter {
+export class OutputList extends TypedEmitter<OutputEvents> {
 
   readonly values: Output[]
 
