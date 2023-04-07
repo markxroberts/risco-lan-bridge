@@ -60,6 +60,7 @@ export class Output extends EventEmitter {
   UserUsable: boolean
   NeedUpdateConfig: boolean
   private Active: boolean
+  OState: string
 
   constructor(Id: number, RiscoComm: RiscoComm, Label?: string, Type?: number, OStatus?: string) {
     super()
