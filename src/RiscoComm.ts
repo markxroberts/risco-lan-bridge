@@ -573,7 +573,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
     const errorCheck = this.isAnyAnError(OStatus);
     if (errorCheck[0]) {
       logger.log('warn', `Got error while fetching output ${id} data: ${errorCheck[1]}`);
-      return undefined;
+      return 'error';
     }
     const OType = await this.tcpSocket.getResult(`OTYPE${id}?`);
     const OLabels = await this.tcpSocket.getResult(`OLBL${id}?`);
