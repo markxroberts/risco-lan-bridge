@@ -45,6 +45,7 @@ export class Output extends EventEmitter {
   RiscoComm: RiscoComm
   Label: string
   OStatus: string
+  Status: string
 
   get Pulsed(): boolean {
     return this.Type % 2 === 0
@@ -78,8 +79,8 @@ export class Output extends EventEmitter {
     // a
     this.Active = false
 
-  //  if (this.OStatus !== '--') {
-  //    this.Status = this.OStatus
+    if (this.OStatus !== '--') {
+      this.Status = this.OStatus
     }
 
   }
