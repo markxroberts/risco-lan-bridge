@@ -573,17 +573,18 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
     const errorCheck = this.isAnyAnError(OStatus);
     if (errorCheck[0]) {
       logger.log('warn', `Got error while fetching output ${id} data: ${errorCheck[1]}`);
-      return 'error';
+      return undefined;
     }
     const OType = await this.tcpSocket.getResult(`OTYPE${id}?`);
     const OLabels = await this.tcpSocket.getResult(`OLBL${id}?`);
     const OGrops = await this.tcpSocket.getResult(`OGROP${id}?`);
+    const OState = await this.tcpSocket.getResult(`OSTT${id}?`);
 
     const Device = outputs.byId(id);
     Device.Label = OLabels.trim();
     Device.Type = parseInt(OType, 10);
-    Device.Status = OStatus;
-    Device.OStatus = OStatus;
+    Device.Status = OState;
+    Device.OStatus = OState;
     if (Device.Pulsed) {
       const OPulseDelay = await this.tcpSocket.getResult(`OPULSE${id}?`);
       Device.PulseDelay = parseInt(OPulseDelay.replace(/ /g, ''), 10) * 1000;
