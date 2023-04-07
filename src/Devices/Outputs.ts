@@ -127,6 +127,9 @@ export class Output extends EventEmitter {
         }
       }
       this.FirstStatus = false
+    } else {
+      this.emit(`OStatusChanged`, this.Id, 'None')
+      this.emit('None', this.Id)
     }
   }
   get Status() {
