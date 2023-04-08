@@ -1,7 +1,7 @@
 import { RiscoComm } from './RiscoComm';
 import { logger, RiscoLogger } from './Logger';
 import { Zone, ZoneList } from './Devices/Zones';
-import { Output, OutputList } from './Devices/Outputs';
+import { OutputList } from './Devices/Outputs';
 import { PartitionList } from './Devices/Partitions';
 import { MBSystem } from './Devices/System';
 import { EventEmitter } from 'events';
