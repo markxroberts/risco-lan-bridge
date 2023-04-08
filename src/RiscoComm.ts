@@ -584,7 +584,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
     Device.Type = parseInt(OType, 10);
     Device.OStatus = OStatus
 
-    if (output.Pulsed) {
+    if (Device.Pulsed) {
       const OPulseDelay = await this.tcpSocket.getResult(`OPULSE${id}?`);
       Device.PulseDelay = parseInt(OPulseDelay.replace(/ /g, ''), 10) * 1000;
     } else {
