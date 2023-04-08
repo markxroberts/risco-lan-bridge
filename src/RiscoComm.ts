@@ -579,19 +579,20 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
     const OLabels = await this.tcpSocket.getResult(`OLBL${id}?`);
     const OGrops = await this.tcpSocket.getResult(`OGROP${id}?`);
 
-    const Device = outputs.byId(id);
-    Device.Label = OLabels.trim();
-    Device.Type = parseInt(OType, 10);
-    Device.OStatus = OStatus
+    const output = outputs.byId(id);
+    output.Label = OLabels.trim();
+    output.Type = parseInt(OType, 10);
+    output.OStatus = OStatus
+    output.Status = OStatus
 
-    if (Device.Pulsed) {
+    if (output.Pulsed) {
       const OPulseDelay = await this.tcpSocket.getResult(`OPULSE${id}?`);
-      Device.PulseDelay = parseInt(OPulseDelay.replace(/ /g, ''), 10) * 1000;
+      output.PulseDelay = parseInt(OPulseDelay.replace(/ /g, ''), 10) * 1000;
     } else {
-      Device.PulseDelay = 0;
+      output.PulseDelay = 0;
     }
-    Device.UserUsable = OGrops === '4';
-    return Device;
+    output.UserUsable = OGrops === '4';
+    return output;
   }
 
   /*

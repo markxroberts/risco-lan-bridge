@@ -60,7 +60,6 @@ export class Output extends TypedEmitter<OutputEvents> {
   UserUsable: boolean
   NeedUpdateConfig: boolean
   private Active: boolean
-  OState: string
 
   constructor(Id: number, RiscoComm: RiscoComm, Label?: string, Type?: number, OStatus?: string) {
     super()
@@ -70,7 +69,6 @@ export class Output extends TypedEmitter<OutputEvents> {
 
     this.Type = Type || 0
     this.OStatus = OStatus || '--'
-    this.OState = OStatus || '---'
 
     this.PulseDelay = 0
     this.FirstStatus = true
@@ -111,15 +109,9 @@ export class Output extends TypedEmitter<OutputEvents> {
               this.emit(`OStatusChanged`, this.Id, 'Pulsed')
               this.emit('Pulsed', this.Id)
             }
-            if (this.FirstStatus) {
-              this.emit('Pulsed', this.Id)
-            }
           } else {
             if (!this.FirstStatus) {
               this.emit(`OStatusChanged`, this.Id, 'Activated')
-              this.emit('Activated', this.Id)
-            }
-            if (this.FirstStatus) {
               this.emit('Activated', this.Id)
             }
           }
@@ -132,9 +124,6 @@ export class Output extends TypedEmitter<OutputEvents> {
               this.emit(`OStatusChanged`, this.Id, 'Deactivated')
               this.emit('Deactivated', this.Id)
             }
-            if (this.FirstStatus) {
-              this.emit('Deactivated', this.Id)
-            }
           }
         }
       }
@@ -142,26 +131,6 @@ export class Output extends TypedEmitter<OutputEvents> {
     }
 
   }
-
-  async toggleOutput(): Promise<boolean> {
-    assertIsDefined(this.RiscoComm.tcpSocket, 'RiscoComm.tcpSocket', 'TCP is not initialized')
-    try {
-        logger.log('debug', `Request for Toggle an Output.`)
-        const ActOutputResult = await this.RiscoComm.tcpSocket.getAckResult(`ACTUO${this.Id}`)
-        // Because Pulsed Output have no Status Update from Panel
-        if (this.Pulsed) {
-          this.Status = 'a'
-          setTimeout(() => {
-            this.Status = '-'
-          }, this.PulseDelay)
-        }
-        return ActOutputResult
-      } catch (err) {
-        logger.log('error', `Failed to Toggle Output : ${this.Id}`)
-        throw err
-      }
-  }
-
 }
 
 export class OutputList extends TypedEmitter<OutputEvents> {
