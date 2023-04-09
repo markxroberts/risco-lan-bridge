@@ -43,8 +43,8 @@ export class Output extends TypedEmitter<OutputEvents> {
 
   Id: number
   RiscoComm: RiscoComm
-  Label: string
-  OStatus: string
+  Label: string = ''
+  OStatus: string = '--'
 
   get Pulsed(): boolean {
     return this.Type % 2 === 0
@@ -54,7 +54,7 @@ export class Output extends TypedEmitter<OutputEvents> {
     return this.Type >= 2
   }
 
-  Type: number
+  Type: number = 0
   PulseDelay: number
   private FirstStatus: boolean
   UserUsable: boolean
