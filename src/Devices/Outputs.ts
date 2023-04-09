@@ -43,8 +43,8 @@ export class Output extends TypedEmitter<OutputEvents> {
 
   Id: number
   RiscoComm: RiscoComm
-  Label: string = ''
-  OStatus: string = '--'
+  Label: string
+  OStatus: string
 
   get Pulsed(): boolean {
     return this.Type % 2 === 0
@@ -54,17 +54,17 @@ export class Output extends TypedEmitter<OutputEvents> {
     return this.Type >= 2
   }
 
-  Type: number = 0
+  Type: number
   PulseDelay: number
   private FirstStatus: boolean
   UserUsable: boolean
   NeedUpdateConfig: boolean
   private Active: boolean
 
-  constructor(Id: number, riscoComm: RiscoComm) {
+  constructor(Id: number, RiscoComm: RiscoComm, Label?: string, Type?: number, OStatus?: string) {
     super()
     this.Id = Id
-    this.RiscoComm = riscoComm
+    this.RiscoComm = RiscoComm
     this.Label = Label || ''
 
     this.Type = Type || 0
@@ -138,9 +138,9 @@ export class Output extends TypedEmitter<OutputEvents> {
         const ActOutputResult = await this.RiscoComm.tcpSocket.getAckResult(`ACTUO${this.Id}`)
         // Because Pulsed Output have no Status Update from Panel
         if (this.Pulsed) {
-          this.Status = 'a'
+          this.OStatus = 'a'
           setTimeout(() => {
-            this.Status = '-'
+            this.OStatus = '-'
           }, this.PulseDelay)
         }
         return ActOutputResult
