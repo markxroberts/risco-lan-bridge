@@ -56,10 +56,10 @@ export class Output extends TypedEmitter<OutputEvents> {
 
   Type: number
   PulseDelay: number
-  private FirstStatus: boolean
+  FirstStatus: boolean
   UserUsable: boolean
   NeedUpdateConfig: boolean
-  private Active: boolean
+  Active: boolean
 
   constructor(Id: number, RiscoComm: RiscoComm, Label?: string, Type?: number, OStatus?: string) {
     super()
