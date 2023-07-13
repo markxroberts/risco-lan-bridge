@@ -35,6 +35,7 @@ export class RiscoPanel extends EventEmitter {
   outputs!: OutputList;
   partitions!: PartitionList;
   mbSystem!: MBSystem;
+  proxy!: RiscoProxyTCPSocket;
 
   devicesDiscoveryCompleted = false
 

@@ -25,6 +25,7 @@ export class PanelInfo {
 
 interface RiscoCommEvents {
   'PanelCommReady': (info: PanelInfo) => void;
+  'PanelDisconnected': (info: PanelInfo) => void;
   'NewOutputStatusFromPanel': (data: string) => void;
   'NewPartitionStatusFromPanel': (data: string) => void;
   'NewMBSystemStatusFromPanel': (data: string) => void;
@@ -47,6 +48,9 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
   panelInfo: PanelInfo | undefined;
 
   tcpSocket: RiscoBaseSocket | undefined;
+
+  proxystatus: RiscoProxyTCPSocket | undefined;
+
   private isDisconnecting = false;
 
   private autoReconnectTimer: NodeJS.Timeout | undefined;
@@ -147,6 +151,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
           this.autoReconnectTimer = setTimeout(() => {
             this.autoReconnectTimer = undefined;
             this.initRPSocket();
+            this.emit('PanelDisconnected')
           }, this.reconnectDelay);
         }
       }
