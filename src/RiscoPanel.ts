@@ -6,6 +6,7 @@ import { PartitionList } from './Devices/Partitions';
 import { MBSystem } from './Devices/System';
 import { EventEmitter } from 'events';
 import { SocketMode } from './RiscoBaseSocket';
+import { RiscoProxyTCPSocket } from './RiscoProxySocket';
 
 export interface PanelOptions {
   panelIp?: string
