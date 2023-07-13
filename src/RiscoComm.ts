@@ -151,7 +151,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
           this.autoReconnectTimer = setTimeout(() => {
             this.autoReconnectTimer = undefined;
             this.initRPSocket();
-            this.emit('PanelDisconnected')
+            this.emit('PanelDisconnected', this.panelInfo)
           }, this.reconnectDelay);
         }
       }

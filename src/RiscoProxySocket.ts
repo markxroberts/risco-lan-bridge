@@ -3,10 +3,8 @@ import { RiscoBaseSocket, SocketOptions } from './RiscoBaseSocket';
 import { logger } from './Logger';
 import { assertIsDefined } from './Assertions';
 import { WriteStream } from 'fs';
-import { EventEmitter } from 'events';
 
-
-export class RiscoProxyTCPSocket extends EventEmitter {
+export class RiscoProxyTCPSocket extends RiscoBaseSocket {
 
   private readonly proxyInServer: Server
   private readonly listeningPort: number
