@@ -22,10 +22,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vanackej/risco-lan-bridge.git"
+    "url": "git+https://github.com/markxroberts/risco-lan-bridge.git"
   },
   "bugs": {
-    "url": "https://github.com/vanackej/risco-lan-bridge/issues"
+    "url": "https://github.com/markxroberts/risco-lan-bridge/issues"
   },
   "scripts": {
     "build": "tsc",
@@ -34,7 +34,7 @@
     "test": "jest --detectOpenHandles",
     "testw": "jest --watch",
     "start": "tsc && node ./dist/main.js",
-    "watch-dist": "onchange -i 'dist/**' -- cp -R dist ../risco-mqtt-local/node_modules/@vanackej/risco-lan-bridge"
+    "watch-dist": "onchange -i 'dist/**' -- cp -R dist ../risco-mqtt-local/node_modules/@markxroberts/risco-lan-bridge"
   },
   "keywords": [
     "risco",
@@ -50,7 +50,7 @@
   ],
   "author": "Johann Vanackere <johann.vanackere@gmail.com>",
   "license": "MIT",
-  "homepage": "https://github.com/vanackej/risco-lan-bridge#readme",
+  "homepage": "https://github.com/markxrobertsj/risco-lan-bridge#readme",
   "devDependencies": {
     "@tsconfig/recommended": "^1.0.1",
     "@types/jest": "^27.0.3",
