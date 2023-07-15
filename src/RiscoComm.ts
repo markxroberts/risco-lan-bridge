@@ -48,8 +48,6 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
 
   tcpSocket: RiscoBaseSocket | undefined;
 
-  proxystatus: RiscoProxyTCPSocket | undefined;
-
   private isDisconnecting = false;
 
   private autoReconnectTimer: NodeJS.Timeout | undefined;
