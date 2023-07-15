@@ -32,6 +32,7 @@ export interface SocketOptions {
   cloudUrl: string,
   cloudPort: number,
   panelConnectionDelay: number,
+  cloudConnectionDelay: number,
   socketMode: SocketMode
 }
 

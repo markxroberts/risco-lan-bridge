@@ -78,6 +78,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
       cloudUrl: (options.cloudUrl || 'www.riscocloud.com'),
       cloudPort: options.cloudPort || 33000,
       panelConnectionDelay: options.panelConnectionDelay || 30000,
+      cloudConnectionDelay: options.cloudConnectionDelay || 5000,
     };
 
     if (options.commandsLog) {
