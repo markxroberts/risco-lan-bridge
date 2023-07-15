@@ -53,6 +53,8 @@ autoDiscover:  true,
 // Defines the waiting time for a reconnection in ms (Optional)
 ReconnectDelay:  10000,
 // Defines automatic connection (Optional)
+cloudConnectionDelay: 5000,
+// Defines cloud reconnection delay
 autoConnect:  true,
 // Defines if the plugin should deactivate RiscoCloud on the control panel (Optional)
 Disable_RiscoCloud:  true,
