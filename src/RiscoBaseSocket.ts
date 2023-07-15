@@ -17,6 +17,8 @@ interface RiscoSocketEvents {
   'PanelConnected': () => void;
   'IncomingRemoteConnection': () => void;
   'EndIncomingRemoteConnection': () => void;
+  'CloudConnected': () => void;
+  'CloudDisconnected': () => void;
 }
 
 export interface SocketOptions {
@@ -30,6 +32,7 @@ export interface SocketOptions {
   cloudUrl: string,
   cloudPort: number,
   panelConnectionDelay: number,
+  cloudConnectionDelay: number,
   socketMode: SocketMode
 }
 

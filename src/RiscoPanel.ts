@@ -20,6 +20,7 @@ export interface PanelOptions {
   cloudUrl?: string,
   cloudPort?: number,
   panelConnectionDelay?: number,
+  cloudConnectionDelay?: number,
   encoding?: BufferEncoding,
   socketMode?: SocketMode,
   ntpServer?: string,
