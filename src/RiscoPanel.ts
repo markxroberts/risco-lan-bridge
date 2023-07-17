@@ -170,11 +170,15 @@ export class RiscoPanel extends EventEmitter {
   }
 
   async armHome(id: number): Promise<boolean> {
-    return this.armPart(id, 1);
+    return this.armPart(id, 5);
   }
 
   async armAway(id: number): Promise<boolean> {
-    return this.armPart(id, 0);
+    return this.armPart(id, 6);
+  }
+
+  async armGroup(id: number, ArmType: number): Promise<boolean> {
+    return this.armPart(id, ArmType);
   }
 
   /**
@@ -193,9 +197,14 @@ export class RiscoPanel extends EventEmitter {
       }
       const SelectedPart = this.partitions.byId(id);
       switch (ArmType) {
-        case 0:
-          return SelectedPart.awayArm();
         case 1:
+        case 2:
+        case 3:
+        case 4:
+          return SelectedPart.groupArm(ArmType);
+        case 5:
+          return SelectedPart.awayArm();
+        case 6:
           return SelectedPart.homeStayArm();
         default:
           throw new Error(`Unsupported arm type :${ArmType}`);

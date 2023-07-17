@@ -171,6 +171,21 @@ export class Partition extends EventEmitter {
     }
   }
 
+  async groupArm(armType): Promise<boolean> {
+    assertIsDefined(this.riscoComm.tcpSocket, 'RiscoComm.tcpSocket', 'TCP is not initialized')
+    logger.log('debug', `Request for Group Arming partition ${this.Id}.`)
+    if (!this.Ready || this.Open) {
+      logger.log('warn', `Failed to Group Arming partition ${this.Id} : partition is not ready or is open`)
+      return false
+    }
+    if (this.HomeStay || this.Arm) {
+      logger.log('debug', `No need to group arm partition ${this.Id} : partition already armed`)
+      return true
+    } else {
+      return await this.riscoComm.tcpSocket.getAckResult(`GARM*${armType}=${this.Id}`)
+    }
+  }
+
   async disarm(): Promise<boolean> {
     assertIsDefined(this.riscoComm.tcpSocket, 'RiscoComm.tcpSocket', 'TCP is not initialized')
     logger.log('debug', `Request for Disarming partition ${this.Id}.`)
