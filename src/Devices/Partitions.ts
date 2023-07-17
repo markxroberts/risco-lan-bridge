@@ -171,7 +171,7 @@ export class Partition extends EventEmitter {
     }
   }
 
-  async groupArm(armType): Promise<boolean> {
+  async groupArm(armType: number): Promise<boolean> {
     assertIsDefined(this.riscoComm.tcpSocket, 'RiscoComm.tcpSocket', 'TCP is not initialized')
     logger.log('debug', `Request for Group Arming partition ${this.Id}.`)
     if (!this.Ready || this.Open) {
