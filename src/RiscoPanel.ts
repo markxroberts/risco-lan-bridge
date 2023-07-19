@@ -170,11 +170,11 @@ export class RiscoPanel extends EventEmitter {
   }
 
   async armHome(id: number): Promise<boolean> {
-    return this.armPart(id, 5);
+    return this.armPart(id, 6);
   }
 
   async armAway(id: number): Promise<boolean> {
-    return this.armPart(id, 6);
+    return this.armPart(id, 5);
   }
 
   async armGroup(id: number, ArmType: number): Promise<boolean> {
