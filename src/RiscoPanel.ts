@@ -197,10 +197,10 @@ export class RiscoPanel extends EventEmitter {
       }
       const SelectedPart = this.partitions.byId(id);
       switch (ArmType) {
-        case 0:
         case 1:
         case 2:
         case 3:
+        case 4:
           return SelectedPart.groupArm(ArmType);
         case 5:
           return SelectedPart.awayArm();
