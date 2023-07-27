@@ -20,7 +20,7 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
 
   private panelConnectTimer?: NodeJS.Timeout
   private cloudConnectionRetryTimer?: NodeJS.Timeout
-  cloudConnected = false
+  private cloudConnected = false
   private isCloudSocketConnected = false
   private lastRmtId: number | null = null
   private inRemoteConn = false
