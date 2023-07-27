@@ -29,7 +29,7 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
   constructor(socketOptions: SocketOptions, commandsStream: WriteStream | undefined) {
     super(socketOptions, commandsStream)
     this.listeningPort = socketOptions.listeningPort
-    this.cloudSocketTimeout = 120000
+    this.cloudSocketTimeout = 240000
     this.cloudConnectionRetryTimer = undefined
     this.cloudPort = socketOptions.cloudPort
     this.cloudUrl = socketOptions.cloudUrl
