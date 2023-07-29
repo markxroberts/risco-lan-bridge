@@ -136,7 +136,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
     this.tcpSocket = tcpSocket;
     logger.log('debug', `TCP Socket created`);
 
-    this.tcpSocket.once('Disconnected', (allowReconnect: boolean) => {
+    this.tcpSocket.on('Disconnected', (allowReconnect: boolean) => {
       logger.log('info', `TCP Socket Disconnected`);
       if (this.isDisconnecting || !allowReconnect) {
         logger.log('info', `Won't attempt automatic reconnection`);
@@ -670,7 +670,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
       if (this.tcpSocket?.isPanelSocketConnected && !this.isDisconnecting) {
         if (!this.tcpSocket.inProg && !this.tcpSocket.inCryptTest) {
           try {
-            await this.tcpSocket.sendCommand(`CLOCK`);
+            await this.tcpSocket.on(`CLOCK`);
           } catch (e) {
             if (e instanceof RiscoCommandError) {
               logger.log('warn', 'Failed to send CLOCK command: ' + e);
