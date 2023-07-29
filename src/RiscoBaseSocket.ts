@@ -305,6 +305,14 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
         return cmdCtx.receivedStr;
       } else {
         throw new RiscoCommandError(cmdCtx, 'TIMEOUT');
+        logger.log('debug', `Failed multiple attempts at retrying command, trying to re-establish panel connection`);
+        try {
+          await this.disconnect();
+          await this.connect();
+        } catch (e) {
+          logger.log('warn', e)
+          logger.log('warn', 'Error while reconnecting to panel')
+        }
       }
     }
   }
@@ -555,7 +563,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
       logger.log('warn', `Provided password is incorrect`);
       if (this.isErrorCode(rmtResponse) && !this.disconnecting) {
         if (this.socketOptions.guessPasswordAndPanelId) {
-          logger.log('info', `Trying to guess password (brut force)`);
+          logger.log('info', `Trying to guess password (brute force)`);
           this.inPasswordGuess = true;
           const foundPassword = await this.guessPassword();
           this.inPasswordGuess = false;
