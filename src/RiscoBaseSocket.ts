@@ -307,8 +307,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
         throw new RiscoCommandError(cmdCtx, 'TIMEOUT');
         logger.log('debug', `Failed multiple attempts at retrying command, trying to re-establish panel connection`);
         try {
-          await this.disconnect();
-          await this.connect();
+          await this.disconnect(true);
         } catch (e) {
           logger.log('warn', e)
           logger.log('warn', 'Error while reconnecting to panel')
