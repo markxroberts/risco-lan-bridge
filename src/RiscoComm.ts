@@ -670,7 +670,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
       if (this.tcpSocket?.isPanelSocketConnected && !this.isDisconnecting) {
         if (!this.tcpSocket.inProg && !this.tcpSocket.inCryptTest) {
           try {
-            await this.on('Clock', data);
+            await this.on('Clock', (data));
           } catch (e) {
             if (e instanceof RiscoCommandError) {
               logger.log('warn', 'Failed to send CLOCK command: ' + e);
