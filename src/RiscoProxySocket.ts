@@ -20,7 +20,7 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
 
   private panelConnectTimer?: NodeJS.Timeout
   private cloudConnectionRetryTimer?: NodeJS.Timeout
-  cloudConnected = false
+  private cloudConnected = false
   private isCloudSocketConnected = false
   private lastRmtId: number | null = null
   private inRemoteConn = false
@@ -276,7 +276,6 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
         logger.log('debug', `[Cloud => Panel] Forwarding Cloud data Buffer to panel: ${dataBufferAsString}`)
         // logger.log('debug', `Assuming connected in 45 seconds, don't know why...`);
         this.panelSocket.write(new_input_data)
-        this.emit('CloudConnected')
         break
       }
       case 17: {
@@ -357,7 +356,6 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
     }
     this.isPanelConnected = this.cloudConnected = this.isCloudSocketConnected = this.isPanelSocketConnected = false
     this.emit('Disconnected', allowReconnect)
-    this.emit('CloudDisconnected')
     return true
   }
 }
