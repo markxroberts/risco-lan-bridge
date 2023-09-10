@@ -73,7 +73,6 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
 
         this.panelSocket.once('error', (error) => {
           logger.log('error', `Panel Socket Error : ${error}`)
-          this.emit('Disconnected')
           this.disconnect(true)
         })
 
@@ -83,13 +82,11 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
           if (this.cloudConnectionRetryTimer !== undefined) {
             clearTimeout(this.cloudConnectionRetryTimer)
           }
-          this.emit('Disconnected')
           this.disconnect(true)
         })
 
         this.panelSocket.on('timeout', () => {
           logger.log('error', `Panel Socket Timeout.`)
-          this.emit('Disconnected')
           this.disconnect(true)
         })
 
