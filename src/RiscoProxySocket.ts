@@ -73,6 +73,7 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
 
         this.panelSocket.once('error', (error) => {
           logger.log('error', `Panel Socket Error : ${error}`)
+          this.emit('Disconnected')
           this.disconnect(true)
         })
 
@@ -82,15 +83,18 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
           if (this.cloudConnectionRetryTimer !== undefined) {
             clearTimeout(this.cloudConnectionRetryTimer)
           }
+          this.emit('Disconnected')
           this.disconnect(true)
         })
 
         this.panelSocket.on('timeout', () => {
           logger.log('error', `Panel Socket Timeout.`)
+          this.emit('Disconnected')
           this.disconnect(true)
         })
 
         this.panelSocket.on('data', (data) => {
+          this.emit('PanelConnected')
           this.newDataFromPanelSocket(data)
         })
         await this.maybeConnectPanel()
@@ -133,6 +137,7 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
       this.cloudSocket.on('ready', async () => {
         logger.log('info', `RiscoCloud Socket: ready`)
         this.isCloudSocketConnected = true
+        this.emit('CloudConnected')
         resolve(true)
         await this.maybeConnectPanel()
       })
@@ -149,12 +154,15 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
           this.cloudConnectionRetryTimer = setTimeout(() => {
             this.cloudSocket.connect(this.cloudPort, this.cloudUrl)
           }, this.cloudConnectionDelay)
+          this.emit('CloudDisconnected')
         } else {
-          logger.log('info', `RiscoCloud Socket: close`)
+          logger.log('info', `RiscoCloud Socket: closed`)
+          this.emit('CloudDisonnected')
         }
       })
       this.cloudSocket.on('timeout', () => {
         logger.log('error', `RiscoCloud Socket Timeout.`)
+        this.emit('CloudDisconnected')
       })
       this.cloudSocket.on('data', (data) => {
         this.newDataFromCloudSocket(data)
@@ -276,7 +284,6 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
         logger.log('debug', `[Cloud => Panel] Forwarding Cloud data Buffer to panel: ${dataBufferAsString}`)
         // logger.log('debug', `Assuming connected in 45 seconds, don't know why...`);
         this.panelSocket.write(new_input_data)
-        this.emit('CloudConnected')
         break
       }
       case 17: {
@@ -357,7 +364,6 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
     }
     this.isPanelConnected = this.cloudConnected = this.isCloudSocketConnected = this.isPanelSocketConnected = false
     this.emit('Disconnected', allowReconnect)
-    this.emit('CloudDisconnected')
     return true
   }
 }
