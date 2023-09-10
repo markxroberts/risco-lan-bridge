@@ -154,7 +154,7 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
           this.emit('CloudDisconnected')
         } else {
           logger.log('info', `RiscoCloud Socket: closed`)
-          this.emit('CloudDisonnected')
+          this.emit('CloudDisconnected')
         }
       })
       this.cloudSocket.on('timeout', () => {
