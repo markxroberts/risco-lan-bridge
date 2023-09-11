@@ -91,7 +91,6 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
         })
 
         this.panelSocket.on('data', (data) => {
-          this.emit('PanelConnected')
           this.newDataFromPanelSocket(data)
         })
         await this.maybeConnectPanel()
