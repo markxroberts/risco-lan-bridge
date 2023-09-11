@@ -126,6 +126,7 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
           this.cloudConnectionRetryTimer = setTimeout(() => {
             this.cloudSocket.connect(this.cloudPort, this.cloudUrl)
           }, this.cloudConnectionDelay)
+          this.emit('CloudDisconnected')
         } else {
           this.cloudSocket.destroy(error)
         }
@@ -133,9 +134,9 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
       this.cloudSocket.on('ready', async () => {
         logger.log('info', `RiscoCloud Socket: ready`)
         this.isCloudSocketConnected = true
-        this.emit('CloudConnected')
         resolve(true)
         await this.maybeConnectPanel()
+        this.emit('CloudConnected')
       })
       this.cloudSocket.on('connect', () => {
         logger.log('debug', `RiscoCloud Socket: connect`)
