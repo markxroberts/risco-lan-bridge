@@ -31,7 +31,8 @@ export interface SocketOptions {
   cloudPort: number,
   panelConnectionDelay: number,
   cloudConnectionDelay: number,
-  socketMode: SocketMode
+  socketMode: SocketMode,
+  maxCommands: number
 }
 
 const dataSeparator = `${String.fromCharCode(3)}${String.fromCharCode(2)}`;
@@ -316,7 +317,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
    * The sequence number must be between 1 and 49 inclusive.
    */
   protected allocateCmdCtx(commandStr: string): CommandContext {
-    if (this.currentCommandId >= 49) {
+    if (this.currentCommandId >= this.socketOptions.maxCommands) {
       this.currentCommandId = 0;
     }
     this.currentCommandId++;
