@@ -25,8 +25,7 @@ export interface PanelOptions {
   socketMode?: SocketMode,
   ntpServer?: string,
   ntpPort?: number,
-  commandsLog?: boolean,
-  maxCommands?: number
+  commandsLog?: boolean
 }
 
 export class RiscoPanel extends EventEmitter {

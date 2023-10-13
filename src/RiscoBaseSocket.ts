@@ -17,6 +17,7 @@ interface RiscoSocketEvents {
   'PanelConnected': () => void;
   'IncomingRemoteConnection': () => void;
   'EndIncomingRemoteConnection': () => void;
+  'SocketError': (err: string) =>void;
 }
 
 export interface SocketOptions {
@@ -32,7 +33,6 @@ export interface SocketOptions {
   panelConnectionDelay: number,
   cloudConnectionDelay: number,
   socketMode: SocketMode,
-  maxCommands: number
 }
 
 const dataSeparator = `${String.fromCharCode(3)}${String.fromCharCode(2)}`;
@@ -317,7 +317,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
    * The sequence number must be between 1 and 49 inclusive.
    */
   protected allocateCmdCtx(commandStr: string): CommandContext {
-    if (this.currentCommandId >= this.socketOptions.maxCommands) {
+    if (this.currentCommandId >= 49) {
       this.currentCommandId = 0;
     }
     this.currentCommandId++;
