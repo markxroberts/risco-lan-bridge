@@ -123,12 +123,12 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
       this.cloudSocket.setTimeout(this.cloudSocketTimeout)
       this.cloudSocket.on('error', (error) => {
         logger.log('debug', `RiscoCloud socket error: ${error}`)
-        this.emit('SocketError', err)
+        this.emit('SocketError', error)
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         if (error.code === 'ECONNREFUSED') {
           logger.log('error', `RiscoCloud socket connection error: ${error}`)
-          this.emit('SocketError', error.code)
+          this.emit('SocketError', error)
           this.cloudConnectionRetryTimer = setTimeout(() => {
             this.cloudSocket.connect(this.cloudPort, this.cloudUrl)
           }, this.cloudConnectionDelay)
