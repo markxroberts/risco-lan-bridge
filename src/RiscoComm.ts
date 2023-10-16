@@ -30,6 +30,7 @@ interface RiscoCommEvents {
   'NewMBSystemStatusFromPanel': (data: string) => void;
   'NewZoneStatusFromPanel': (data: string) => void;
   'Clock': (data: string) => void;
+  'SocketError': (data: any) => void;
 }
 
 export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
