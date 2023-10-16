@@ -262,6 +262,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
       waitResponse = false;
       shouldRetry = false;
       logger.log('error', `Command[${cmdId}] error: ${err}`);
+      this.emit('SocketError', err)
     };
 
     try {
@@ -554,7 +555,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
       logger.log('warn', `Provided password is incorrect`);
       if (this.isErrorCode(rmtResponse) && !this.disconnecting) {
         if (this.socketOptions.guessPasswordAndPanelId) {
-          logger.log('info', `Trying to guess password (brut force)`);
+          logger.log('info', `Trying to guess password (brute force)`);
           this.inPasswordGuess = true;
           const foundPassword = await this.guessPassword();
           this.inPasswordGuess = false;
