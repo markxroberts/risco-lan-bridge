@@ -676,7 +676,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
           } catch (e) {
             if (e instanceof RiscoCommandError) {
               logger.log('warn', 'Failed to send CLOCK command: ' + e);
-              this.emit('CommsError', e.tostring())
+              this.emit('CommsError', e.toString())
             } else {
               throw e;
             }
