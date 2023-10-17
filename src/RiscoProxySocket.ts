@@ -99,7 +99,7 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
         await this.maybeConnectPanel()
       } catch (err) {
         logger.log('error', `RiscoCloud Socket Error : ${err}`)
-        this.emit('SocketError', err.code)
+        this.emit('SocketError', (err as Error).toString())
       }
     })
     this.proxyInServer.on('listening', () => {
