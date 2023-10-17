@@ -17,7 +17,7 @@ interface RiscoSocketEvents {
   'PanelConnected': () => void;
   'IncomingRemoteConnection': () => void;
   'EndIncomingRemoteConnection': () => void;
-  'SocketError': (err: any) =>void;
+  'SocketError': (err: string) => void;
 }
 
 export interface SocketOptions {
@@ -262,7 +262,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
       waitResponse = false;
       shouldRetry = false;
       logger.log('error', `Command[${cmdId}] error: ${err}`);
-      this.emit('SocketError', err.code)
+      this.emit('SocketError', err.toString())
     };
 
     try {
