@@ -657,7 +657,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
     for (const val of values) {
       const statusError = this.tcpSocket!!.getErrorCode(val);
       if (statusError) {
-        this.emit('SocketError', statusError[0])
+        this.emit('CommsError', statusError[0])
         return [true, statusError[0]];
       }
     }
@@ -676,7 +676,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
           } catch (e) {
             if (e instanceof RiscoCommandError) {
               logger.log('warn', 'Failed to send CLOCK command: ' + e);
-              this.emit('SocketError', e)
+              this.emit('CommsError', e)
             } else {
               throw e;
             }
