@@ -262,7 +262,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
       waitResponse = false;
       shouldRetry = false;
       logger.log('error', `Command[${cmdId}] error: ${err}`);
-      this.emit('SocketError', err.toString())
+      this.emit('SocketError', JSON.stringify(err))
     };
 
     try {
