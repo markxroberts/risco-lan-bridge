@@ -31,7 +31,7 @@ export class RiscoDirectTCPSocket extends RiscoBaseSocket {
       }
     })
     this.panelSocket.once('error', (err) => {
-      logger.log('error', `Socket Error: ${err}`)
+      logger.log('warn', `Socket Error: ${err}`)
       this.emit('SocketError','Socket Error')
       this.disconnect(true)
     })
