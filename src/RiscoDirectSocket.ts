@@ -5,7 +5,11 @@ import { logger } from './Logger';
 import { WriteStream } from 'fs';
 import { TypedEmitter } from 'tiny-typed-emitter';
 
-export class RiscoDirectTCPSocket extends RiscoBaseSocket {
+interface RiscoDirectSocketEvents {
+  'SocketError': (error: string) => void;
+}
+
+export class RiscoDirectTCPSocket extends TypedEmitter<RiscoDirectSocketEvents> {
 
   constructor(socketOptions: SocketOptions, commandsStream: WriteStream | undefined) {
     super(socketOptions, commandsStream)
