@@ -3,6 +3,7 @@ import { RiscoBaseSocket, SocketOptions } from './RiscoBaseSocket';
 import { Socket } from 'net';
 import { logger } from './Logger';
 import { WriteStream } from 'fs';
+import { TypedEmitter } from 'tiny-typed-emitter';
 
 export class RiscoDirectTCPSocket extends RiscoBaseSocket {
 

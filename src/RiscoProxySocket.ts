@@ -3,6 +3,7 @@ import { RiscoBaseSocket, SocketOptions } from './RiscoBaseSocket';
 import { logger } from './Logger';
 import { assertIsDefined } from './Assertions';
 import { WriteStream } from 'fs';
+import { TypedEmitter } from 'tiny-typed-emitter';
 
 export class RiscoProxyTCPSocket extends RiscoBaseSocket {
 
