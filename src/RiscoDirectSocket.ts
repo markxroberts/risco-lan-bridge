@@ -5,11 +5,7 @@ import { logger } from './Logger';
 import { WriteStream } from 'fs';
 import { TypedEmitter } from 'tiny-typed-emitter';
 
-interface RiscoDirectSocketEvents {
-  'SocketError': (error: string) => void;
-}
-
-export class RiscoDirectTCPSocket extends TypedEmitter<RiscoDirectSocketEvents> {
+export class RiscoDirectTCPSocket extends RiscoBaseSocket {
 
   constructor(socketOptions: SocketOptions, commandsStream: WriteStream | undefined) {
     super(socketOptions, commandsStream)
@@ -36,7 +32,7 @@ export class RiscoDirectTCPSocket extends TypedEmitter<RiscoDirectSocketEvents> 
       }
     })
     this.panelSocket.once('error', (err) => {
-      logger.log('warn', `Socket Error: ${err}`)
+      logger.log('error', `Socket Error: ${err}`)
       this.emit('SocketError','Socket Error')
       this.disconnect(true)
     })

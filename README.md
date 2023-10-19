@@ -56,8 +56,6 @@ ReconnectDelay:  10000,
 cloudConnectionDelay: 5000,
 // Defines cloud reconnection delay
 autoConnect:  true,
-// Defines maximum number of command retries (Optional)
-maxCommands: 50,
 // Defines if the plugin should deactivate RiscoCloud on the control panel (Optional)
 Disable_RiscoCloud:  true,
 // Defines if the plugin should activate RiscoCloud on the control panel (Optional)
