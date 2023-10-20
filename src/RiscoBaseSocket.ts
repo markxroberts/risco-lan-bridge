@@ -17,7 +17,7 @@ interface RiscoSocketEvents {
   'PanelConnected': () => void;
   'IncomingRemoteConnection': () => void;
   'EndIncomingRemoteConnection': () => void;
-  'SocketError': (error: string) => void;
+  'SocketError': (data: string) => void;
 }
 
 export interface SocketOptions {
