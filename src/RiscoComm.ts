@@ -30,7 +30,7 @@ interface RiscoCommEvents {
   'NewMBSystemStatusFromPanel': (data: string) => void;
   'NewZoneStatusFromPanel': (data: string) => void;
   'Clock': (data: string) => void;
-  'CommsError': (error: string) => void;
+  'CommsError': (data: string) => void;
 }
 
 export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
@@ -676,7 +676,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
           } catch (e) {
             if (e instanceof RiscoCommandError) {
               logger.log('warn', 'Failed to send CLOCK command: ' + e);
-              this.emit('CommsError', e.toString())
+              this.emit('CommsError', JSON.stringify(e as Error))
             } else {
               this.emit('CommsError', JSON.stringify(e as Error))
               throw e;

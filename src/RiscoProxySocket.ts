@@ -74,7 +74,7 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
 
         this.panelSocket.once('error', (error) => {
           this.emit('SocketError', JSON.stringify(error))
-          logger.log('error', `Panel Socket Error : ${error}`)
+          logger.log('error', `Panel Socket Error: ${error}`)
           this.disconnect(true)
         })
 
