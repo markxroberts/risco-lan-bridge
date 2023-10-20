@@ -26,24 +26,24 @@ export class RiscoDirectTCPSocket extends RiscoBaseSocket {
       try {
         await this.panelConnect()
       } catch (e) {
+        this.emit('SocketError', JSON.stringify(e as Error))
         logger.log('error', e)
-        this.emit('SocketError', (e as Error).toString())
         await this.disconnect(true)
       }
     })
-    this.panelSocket.once('error', (err) => {
-      logger.log('error', `Socket Error: ${err}`)
-      this.emit('SocketError','Socket Error')
+    this.panelSocket.once('error', (error) => {
+      this.emit('SocketError', JSON.stringify(error as Error))
+      logger.log('error', `Socket Error: ${error}`)
       this.disconnect(true)
     })
     this.panelSocket.once('close', () => {
-      logger.log('error', `Socket Closed.`)
       this.emit('SocketError', 'Socket Closed')
+      logger.log('error', `Socket Closed.`)
       this.disconnect(true)
     })
     this.panelSocket.once('timeout', () => {
-      logger.log('error', `Socket Timeout.`)
       this.emit('SocketError', 'Socket Timeout')
+      logger.log('error', `Socket Timeout.`)
       this.disconnect(true)
     })
     this.panelSocket.on('data', (inputData: Buffer) => {
@@ -66,9 +66,9 @@ export class RiscoDirectTCPSocket extends RiscoBaseSocket {
         try {
           await this.sendCommand('DCN', false, false)
         } catch (e) {
+          this.emit('SocketError', JSON.stringify(e as Error))
           logger.log('warn', e)
           logger.log('warn', 'Error while sending DCN command')
-          this.emit('SocketError', JSON.stringify(e as Error))
         }
       }
       this.panelSocket.destroy()

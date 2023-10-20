@@ -73,15 +73,15 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
         await this.initCloudSocket()
 
         this.panelSocket.once('error', (error) => {
-          logger.log('error', `Panel Socket Error : ${error}`)
           this.emit('SocketError', JSON.stringify(error))
+          logger.log('error', `Panel Socket Error : ${error}`)
           this.disconnect(true)
         })
 
         this.panelSocket.once('close', () => {
+          this.emit('SocketError', 'Panel Socket closed')
           logger.log('error', `Panel Socket Closed.`)
           this.isPanelSocketConnected = false
-          this.emit('SocketError', 'Panel Socket closed')
           if (this.cloudConnectionRetryTimer !== undefined) {
             clearTimeout(this.cloudConnectionRetryTimer)
           }
@@ -89,8 +89,8 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
         })
 
         this.panelSocket.on('timeout', () => {
-          logger.log('error', `Panel Socket Timeout.`)
           this.emit('SocketError', 'Socket timeout')
+          logger.log('error', `Panel Socket Timeout.`)
           this.disconnect(true)
         })
 
@@ -99,8 +99,8 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
         })
         await this.maybeConnectPanel()
       } catch (err) {
-        logger.log('error', `RiscoCloud Socket Error : ${err}`)
         this.emit('SocketError', JSON.stringify(err as Error))
+        logger.log('error', `RiscoCloud Socket Error : ${err}`)
       }
     })
     this.proxyInServer.on('listening', () => {
@@ -128,8 +128,8 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         if (error.code === 'ECONNREFUSED') {
-          logger.log('error', `RiscoCloud socket connection error: ${error}`)
           this.emit('SocketError', JSON.stringify(error))
+          logger.log('error', `RiscoCloud socket connection error: ${error}`)
           this.cloudConnectionRetryTimer = setTimeout(() => {
             this.cloudSocket.connect(this.cloudPort, this.cloudUrl)
           }, this.cloudConnectionDelay)
@@ -152,19 +152,19 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
       this.cloudSocket.on('close', () => {
         this.isCloudSocketConnected = false
         if (!this.disconnecting) {
-          logger.log('error', `RiscoCloud Socket: close. Retrying within ${this.cloudConnectionDelay} ms`)
           this.emit('SocketError', 'Cloud socket Closed')
+          logger.log('error', `RiscoCloud Socket: close. Retrying within ${this.cloudConnectionDelay} ms`)
           this.cloudConnectionRetryTimer = setTimeout(() => {
             this.cloudSocket.connect(this.cloudPort, this.cloudUrl)
           }, this.cloudConnectionDelay)
         } else {
-          logger.log('info', `RiscoCloud Socket: closed`)
           this.emit('SocketError', 'Cloud socket Closed')
+          logger.log('info', `RiscoCloud Socket: closed`)
         }
       })
       this.cloudSocket.on('timeout', () => {
-        logger.log('error', `RiscoCloud Socket Timeout.`)
         this.emit('SocketError', 'Cloud socket Timeout')
+        logger.log('error', `RiscoCloud Socket Timeout.`)
       })
       this.cloudSocket.on('data', (data) => {
         this.newDataFromCloudSocket(data)
