@@ -74,7 +74,7 @@ export class RiscoDirectTCPSocket extends RiscoBaseSocket {
       this.panelSocket.destroy()
       logger.log('debug', `Socket Destroyed.`)
       let listenerdelay;
-      listenerdelay = setTimeout(function() {
+      listenerdelay = setTimeout(() => {
         this.panelSocket.removeAllListeners();
         this.panelSocket = undefined}, 5000)
     }

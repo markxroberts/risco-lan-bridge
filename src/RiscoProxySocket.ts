@@ -355,7 +355,7 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
         }
       }
       let listenerdelay;
-      listenerdelay = setTimeout(function() {
+      listenerdelay = setTimeout(() => {
         this.panelSocket.removeAllListeners()
         this.panelSocket.destroy()
         this.panelSocket = undefined
@@ -363,7 +363,7 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
     }
     if (this.cloudSocket !== undefined && !this.cloudSocket.destroyed) {
       let listenerdelay;
-      listenerdelay = setTimeout(function() {
+      listenerdelay = setTimeout(() => {
         this.cloudSocket.destroy()
         this.cloudSocket.removeAllListeners()
         logger.log('debug', `RiscoCloud Socket Destroyed.`)},5000)
