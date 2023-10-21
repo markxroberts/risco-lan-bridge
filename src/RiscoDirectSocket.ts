@@ -73,10 +73,11 @@ export class RiscoDirectTCPSocket extends RiscoBaseSocket {
       }
       let listenerdelay;
       listenerdelay = setTimeout(() => {
-        this.panelSocket.destroy()
-        logger.log('debug', `Socket Destroyed.`)
-        this.panelSocket.removeAllListeners();
-        this.panelSocket = undefined}, 5000)
+        if (this.panelSocket !== undefined && !this.panelSocket.destroyed) {
+          this.panelSocket.destroy()
+          logger.log('debug', `Socket Destroyed.`)
+          this.panelSocket.removeAllListeners();
+          this.panelSocket = undefined}}, 5000)
     }
     this.isPanelSocketConnected = false
     this.emit('Disconnected', allowReconnect)

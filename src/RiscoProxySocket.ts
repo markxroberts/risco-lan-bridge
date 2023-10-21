@@ -356,10 +356,11 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
       }
       let listenerdelay;
       listenerdelay = setTimeout(() => {
-        this.panelSocket.removeAllListeners()
-        this.panelSocket.destroy()
-        this.panelSocket = undefined
-        logger.log('debug', `Socket Destroyed.`)},5000)
+        if (this.panelSocket !== undefined && !this.panelSocket.destroyed) {
+          this.panelSocket.removeAllListeners()
+          this.panelSocket.destroy()
+          this.panelSocket = undefined
+          logger.log('debug', `Socket Destroyed.`)}},5000)
     }
     if (this.cloudSocket !== undefined && !this.cloudSocket.destroyed) {
       let listenerdelay;
