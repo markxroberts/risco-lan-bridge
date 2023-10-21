@@ -3,7 +3,6 @@ import { RiscoBaseSocket, SocketOptions } from './RiscoBaseSocket';
 import { Socket } from 'net';
 import { logger } from './Logger';
 import { WriteStream } from 'fs';
-import { TypedEmitter } from 'tiny-typed-emitter';
 
 export class RiscoDirectTCPSocket extends RiscoBaseSocket {
 
@@ -26,23 +25,19 @@ export class RiscoDirectTCPSocket extends RiscoBaseSocket {
       try {
         await this.panelConnect()
       } catch (e) {
-        this.emit('SocketError', JSON.stringify(e as Error))
         logger.log('error', e)
         await this.disconnect(true)
       }
     })
     this.panelSocket.once('error', (error) => {
-      this.emit('SocketError', JSON.stringify(error as Error))
       logger.log('error', `Socket Error: ${error}`)
       this.disconnect(true)
     })
     this.panelSocket.once('close', () => {
-      this.emit('SocketError', 'Socket Closed')
       logger.log('error', `Socket Closed.`)
       this.disconnect(true)
     })
     this.panelSocket.once('timeout', () => {
-      this.emit('SocketError', 'Socket Timeout')
       logger.log('error', `Socket Timeout.`)
       this.disconnect(true)
     })
@@ -71,13 +66,10 @@ export class RiscoDirectTCPSocket extends RiscoBaseSocket {
           logger.log('warn', 'Error while sending DCN command')
         }
       }
-      let listenerdelay;
-      listenerdelay = setTimeout(() => {
-        if (this.panelSocket !== undefined && !this.panelSocket.destroyed) {
-          this.panelSocket.destroy()
-          logger.log('debug', `Socket Destroyed.`)
-          this.panelSocket.removeAllListeners();
-          this.panelSocket = undefined}}, 5000)
+      this.panelSocket.destroy()
+      logger.log('debug', `Socket Destroyed.`)
+      this.panelSocket.removeAllListeners()
+      this.panelSocket = undefined
     }
     this.isPanelSocketConnected = false
     this.emit('Disconnected', allowReconnect)
