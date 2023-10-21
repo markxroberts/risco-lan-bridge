@@ -126,7 +126,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
     //verify if listener exist before kill it
     if (this.tcpSocket !== undefined) {
       logger.log('debug', `A TCP Socket already exists, clearing its listeners before creating a new one`);
-      this.emit('Comms Error', 'New socket being connected')
+      this.emit('CommsError', 'New socket being connected')
       this.tcpSocket.removeAllListeners();
     }
     let tcpSocket: RiscoBaseSocket;
@@ -140,10 +140,10 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
 
     this.tcpSocket.once('Disconnected', (allowReconnect: boolean) => {
       logger.log('info', `TCP Socket Disconnected`);
-      this.emit('Comms Error', 'Socket Disconnected')
+      this.emit('CommsError', 'Socket Disconnected')
       if (this.isDisconnecting || !allowReconnect) {
         logger.log('info', `Won't attempt automatic reconnection`);
-        this.emit('Comms Error', 'No reconnection')
+        this.emit('CommsError', 'No reconnection')
         if (this.autoReconnectTimer !== undefined) {
           clearTimeout(this.autoReconnectTimer);
         }
