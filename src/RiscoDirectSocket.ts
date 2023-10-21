@@ -71,10 +71,10 @@ export class RiscoDirectTCPSocket extends RiscoBaseSocket {
           logger.log('warn', 'Error while sending DCN command')
         }
       }
-      this.panelSocket.destroy()
-      logger.log('debug', `Socket Destroyed.`)
       let listenerdelay;
       listenerdelay = setTimeout(() => {
+        this.panelSocket.destroy()
+        logger.log('debug', `Socket Destroyed.`)
         this.panelSocket.removeAllListeners();
         this.panelSocket = undefined}, 5000)
     }
