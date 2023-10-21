@@ -354,15 +354,19 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
           logger.log('warn', 'Error while sending DCN command')
         }
       }
-      this.panelSocket.removeAllListeners()
-      this.panelSocket.destroy()
-      this.panelSocket = undefined
-      logger.log('debug', `Socket Destroyed.`)
+      let listenerdelay;
+      listenerdelay = setTimeout(function() {
+        this.panelSocket.removeAllListeners()
+        this.panelSocket.destroy()
+        this.panelSocket = undefined
+        logger.log('debug', `Socket Destroyed.`)},5000)
     }
     if (this.cloudSocket !== undefined && !this.cloudSocket.destroyed) {
-      this.cloudSocket.destroy()
-      this.cloudSocket.removeAllListeners()
-      logger.log('debug', `RiscoCloud Socket Destroyed.`)
+      let listenerdelay;
+      listenerdelay = setTimeout(function() {
+        this.cloudSocket.destroy()
+        this.cloudSocket.removeAllListeners()
+        logger.log('debug', `RiscoCloud Socket Destroyed.`)},5000)
     }
     this.isPanelConnected = this.cloudConnected = this.isCloudSocketConnected = this.isPanelSocketConnected = false
     this.emit('Disconnected', allowReconnect)
