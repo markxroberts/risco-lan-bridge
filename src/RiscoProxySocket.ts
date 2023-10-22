@@ -52,7 +52,7 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       if (err.code === 'EADDRINUSE') {
-        logger.log('error', `Cannot start Proxy ; Address already in use, retrying within 5sec...`)
+        logger.log('error', `Cannot start Proxy.  Address already in use, retrying within 5sec...`)
         setTimeout(() => {
           this.proxyInServer.close()
           this.proxyInServer.listen(this.listeningPort)
@@ -79,7 +79,7 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
         })
 
         this.panelSocket.once('close', () => {
-          this.emit('SocketError', 'Panel Socket closed')
+          this.emit('SocketError', 'Panel socket closed')
           logger.log('error', `Panel Socket Closed.`)
           this.isPanelSocketConnected = false
           if (this.cloudConnectionRetryTimer !== undefined) {
@@ -89,7 +89,7 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
         })
 
         this.panelSocket.on('timeout', () => {
-          this.emit('SocketError', 'Socket timeout')
+          this.emit('SocketError', 'Panel socket timeout')
           logger.log('error', `Panel Socket Timeout.`)
           this.disconnect(true)
         })
@@ -152,18 +152,19 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
       this.cloudSocket.on('close', () => {
         this.isCloudSocketConnected = false
         if (!this.disconnecting) {
-          this.emit('SocketError', 'Cloud socket Closed')
-          logger.log('error', `RiscoCloud Socket: close. Retrying within ${this.cloudConnectionDelay} ms`)
+          this.emit('SocketError', 'RiscoCloud socket closed')
+          this.cloudSocket.disconnect();
+          logger.log('error', `RiscoCloud Socket: closed. Retrying within ${this.cloudConnectionDelay} ms`)
           this.cloudConnectionRetryTimer = setTimeout(() => {
             this.cloudSocket.connect(this.cloudPort, this.cloudUrl)
           }, this.cloudConnectionDelay)
         } else {
-          this.emit('SocketError', 'Cloud socket Closed')
-          logger.log('info', `RiscoCloud Socket: closed`)
+          this.emit('SocketError', 'RiscoCloud socket closed')
+          logger.log('error', `RiscoCloud Socket: closed`)
         }
       })
       this.cloudSocket.on('timeout', () => {
-        this.emit('SocketError', 'Cloud socket Timeout')
+        this.emit('SocketError', 'Cloud socket timeout')
         logger.log('error', `RiscoCloud Socket Timeout.`)
       })
       this.cloudSocket.on('data', (data) => {
