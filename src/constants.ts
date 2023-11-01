@@ -37,6 +37,7 @@ export enum PanelType {
     RW232 = 'RW232',
     RW332 = 'RW332',
     RP432 = 'RP432',
+    RP432MP = 'RP432MP',
     RP512 = 'RP512'
 }
 

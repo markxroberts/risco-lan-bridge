@@ -282,6 +282,12 @@ export class LightSys extends RiscoPanel {
   }
 }
 
+export class LightSysPlus extends RiscoPanel {
+  constructor(Options: PanelOptions) {
+    super(Options);
+  }
+}
+
 export class ProsysPlus extends RiscoPanel {
   constructor(Options: PanelOptions) {
     super(Options);

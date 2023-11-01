@@ -318,6 +318,23 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
           SupportPirCam: false,
         };
       }
+      case PanelType.RP432MP: {
+        let MaxZones = 32;
+        let MaxOutputs = 14;
+        if (this.compareVersion(firmwareVersion, '3.0') >= 0) {
+          MaxZones = 50;
+          MaxOutputs = 32;
+        }
+        return {
+          PanelType: panelType,
+          PanelModel: 'LightSys Plus',
+          PanelFW: firmwareVersion,
+          MaxZones: MaxZones,
+          MaxParts: 4,
+          MaxOutputs: MaxOutputs,
+          SupportPirCam: false,
+        };
+      }
       case PanelType.RP512: {
         let MaxZones = 64;
         // At the moment, only zones up to 128.
@@ -358,7 +375,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
    */
   async GetPanelFwVersion(panelType: string): Promise<string> {
     assertIsDefined(this.tcpSocket, 'tcpSocket');
-    if (panelType === PanelType.RP432 || panelType === PanelType.RP512) {
+    if (panelType === PanelType.RP432 || panelType === PanelType.RP432MP || panelType === PanelType.RP512) {
       let FwVersion = '';
       try {
         FwVersion = await this.tcpSocket.getResult('FSVER?');
