@@ -319,20 +319,16 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
         };
       }
       case PanelType.RP432MP: {
-        let MaxZones = 32;
-        let MaxOutputs = 14;
-        if (this.compareVersion(firmwareVersion, '3.0') >= 0) {
-          MaxZones = 50;
-          MaxOutputs = 32;
-        }
+        let MaxZones = 512;
+        let MaxOutputs = 196;
         return {
           PanelType: panelType,
           PanelModel: 'LightSys Plus',
           PanelFW: firmwareVersion,
           MaxZones: MaxZones,
-          MaxParts: 4,
+          MaxParts: 32,
           MaxOutputs: MaxOutputs,
-          SupportPirCam: false,
+          SupportPirCam: true,
         };
       }
       case PanelType.RP512: {
