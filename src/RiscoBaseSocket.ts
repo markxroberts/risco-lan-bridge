@@ -30,6 +30,8 @@ export interface SocketOptions {
   encoding: BufferEncoding,
   cloudUrl: string,
   cloudPort: number,
+  cloudSocketKeepAlive: boolean,
+  cloudSocketTimeout: number,
   panelConnectionDelay: number,
   cloudConnectionDelay: number,
   socketMode: SocketMode,

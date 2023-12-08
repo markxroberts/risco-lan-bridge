@@ -30,10 +30,11 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
   constructor(socketOptions: SocketOptions, commandsStream: WriteStream | undefined) {
     super(socketOptions, commandsStream)
     this.listeningPort = socketOptions.listeningPort
-    this.cloudSocketTimeout = 120000
     this.cloudConnectionRetryTimer = undefined
     this.cloudPort = socketOptions.cloudPort
     this.cloudUrl = socketOptions.cloudUrl
+    this.cloudSocketKeepAlive = socketOptions.cloudSocketKeepAlive
+    this.cloudSocketTimeout = socketOptions.cloudSocketTimeout
     this.panelConnectionDelay = socketOptions.panelConnectionDelay
     this.cloudConnectionDelay = socketOptions.cloudConnectionDelay
     this.cloudSocket = new Socket()
@@ -122,6 +123,7 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
     return new Promise((resolve) => {
       this.cloudSocket.removeAllListeners()
       this.cloudSocket.setTimeout(this.cloudSocketTimeout)
+      this.cloudSocket.keepAlive(this.cloudSocketKeepAlive)
       this.cloudSocket.on('error', (error) => {
         logger.log('debug', `RiscoCloud socket error: ${error}`)
         this.emit('SocketError', JSON.stringify(error))
