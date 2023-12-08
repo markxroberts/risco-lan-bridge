@@ -19,6 +19,8 @@ export interface PanelOptions {
   listeningPort?: number,
   cloudUrl?: string,
   cloudPort?: number,
+  cloudSocketKeepAlive?: boolean,
+  cloudSocketTimeout?: number,
   panelConnectionDelay?: number,
   cloudConnectionDelay?: number,
   encoding?: BufferEncoding,

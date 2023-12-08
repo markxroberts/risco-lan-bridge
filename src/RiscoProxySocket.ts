@@ -14,6 +14,7 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
   private readonly cloudPort: number
 
   private readonly cloudUrl: string
+  private readonly cloudSocketKeepAlive: boolean
   private readonly cloudSocketTimeout: number
   private readonly panelConnectionDelay: number
   private readonly cloudConnectionDelay: number
@@ -123,7 +124,7 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
     return new Promise((resolve) => {
       this.cloudSocket.removeAllListeners()
       this.cloudSocket.setTimeout(this.cloudSocketTimeout)
-      this.cloudSocket.keepAlive(this.cloudSocketKeepAlive)
+      this.cloudSocket.setKeepAlive(this.cloudSocketKeepAlive)
       this.cloudSocket.on('error', (error) => {
         logger.log('debug', `RiscoCloud socket error: ${error}`)
         this.emit('SocketError', JSON.stringify(error))
