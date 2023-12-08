@@ -1,7 +1,7 @@
-[![license badge](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/vanackej/risco-lan-bridge/blob/main/LICENSE)
-[![Package Version](https://shields.io/npm/v/@vanackej/risco-lan-bridge/latest)](https://www.npmjs.com/package/@vanackej/risco-lan-bridge)
-[![Node Version](https://shields.io/node/v/@vanackej/risco-lan-bridge)](https://www.npmjs.com/package/@vanackej/risco-lan-bridge)
-[![Maintenance badge](https://shields.io/badge/maintenance-yes-green.svg)](https://www.npmjs.com/package/@vanackej/risco-lan-bridge)
+[![license badge](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/markxroberts/risco-lan-bridge/blob/main/LICENSE)
+[![Package Version](https://shields.io/npm/v/@markxroberts/risco-lan-bridge/latest)](https://www.npmjs.com/package/@markroberts/risco-lan-bridge)
+[![Node Version](https://shields.io/node/v/@markxroberts/risco-lan-bridge)](https://www.npmjs.com/package/@markxroberts/risco-lan-bridge)
+[![Maintenance badge](https://shields.io/badge/maintenance-yes-green.svg)](https://www.npmjs.com/package/@markxroberts/risco-lan-bridge)
 
 
 
@@ -11,7 +11,7 @@ This program is intended to be used as a "bridge" between your application and a
 
 ## Compatibility
 risco-lan-bridge is compatible with these central units and these features:
-||Agility|Wicomm|Wicomm Pro|LightSYS|ProSYSPlus/GTPlus|Other|
+||Agility|Wicomm|Wicomm Pro|LightSYS/Plus|ProSYSPlus/GTPlus|Other|
 |--|:--:|:--:|:--:|:--:|:--:|:--:|
 |Zones|Y*|Y*|Y*|Y|Y*|?|
 |Partitions|Y*|Y*|Y*|Y|Y*|?|
@@ -90,8 +90,10 @@ let  RPanel = new  RiscoTCPPanel.Agility(Options);
 let  RPanel = new  RiscoTCPPanel.WiComm(Options);
 // Or create WiCommPro Object
 let  RPanel = new  RiscoTCPPanel.WiCommPro(Options);
-// Or create LightSYS Object
+// Or create LightSys Object
 let  RPanel = new  RiscoTCPPanel.LightSys(Options);
+// Or create LightSysPlus object
+let  RPanel = new  RiscoTCPPanel.LightSysPlus(Options);
 // Or create ProsysPlus Object
 let  RPanel = new  RiscoTCPPanel.ProsysPlus(Options);
 // Or create GTPlus Object

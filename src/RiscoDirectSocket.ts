@@ -29,8 +29,8 @@ export class RiscoDirectTCPSocket extends RiscoBaseSocket {
         await this.disconnect(true)
       }
     })
-    this.panelSocket.once('error', (err) => {
-      logger.log('error', `Socket Error : ${err}`)
+    this.panelSocket.once('error', (error) => {
+      logger.log('error', `Socket Error: ${error}`)
       this.disconnect(true)
     })
     this.panelSocket.once('close', () => {
@@ -61,6 +61,7 @@ export class RiscoDirectTCPSocket extends RiscoBaseSocket {
         try {
           await this.sendCommand('DCN', false, false)
         } catch (e) {
+          this.emit('SocketError', JSON.stringify(e as Error))
           logger.log('warn', e)
           logger.log('warn', 'Error while sending DCN command')
         }

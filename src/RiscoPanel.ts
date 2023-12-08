@@ -25,7 +25,7 @@ export interface PanelOptions {
   socketMode?: SocketMode,
   ntpServer?: string,
   ntpPort?: number,
-  commandsLog?: boolean,
+  commandsLog?: boolean
 }
 
 export class RiscoPanel extends EventEmitter {
@@ -168,11 +168,15 @@ export class RiscoPanel extends EventEmitter {
   }
 
   async armHome(id: number): Promise<boolean> {
-    return this.armPart(id, 1);
+    return this.armPart(id, 6);
   }
 
   async armAway(id: number): Promise<boolean> {
-    return this.armPart(id, 0);
+    return this.armPart(id, 5);
+  }
+
+  async armGroup(id: number, ArmType: number): Promise<boolean> {
+    return this.armPart(id, ArmType);
   }
 
   /**
@@ -183,17 +187,22 @@ export class RiscoPanel extends EventEmitter {
    * @return  Boolean
    */
   private async armPart(id: number, ArmType: number): Promise<boolean> {
-    logger.log('debug', `Request for Full/Stay Arming a Partition.`);
+    logger.log('debug', `Request for Arming a Partition.`);
     try {
       if ((id > this.partitions.values.length) || (id < 0)) {
-        logger.log('warn', `Failed to Full/Stay Arming partition ${id} : invalid partition id`);
+        logger.log('warn', `Failed to Arm partition ${id} : invalid partition id`);
         return false;
       }
       const SelectedPart = this.partitions.byId(id);
       switch (ArmType) {
-        case 0:
-          return SelectedPart.awayArm();
         case 1:
+        case 2:
+        case 3:
+        case 4:
+          return SelectedPart.groupArm(ArmType);
+        case 5:
+          return SelectedPart.awayArm();
+        case 6:
           return SelectedPart.homeStayArm();
         default:
           throw new Error(`Unsupported arm type :${ArmType}`);
@@ -268,6 +277,12 @@ export class WiCommPro extends RiscoPanel {
 }
 
 export class LightSys extends RiscoPanel {
+  constructor(Options: PanelOptions) {
+    super(Options);
+  }
+}
+
+export class LightSysPlus extends RiscoPanel {
   constructor(Options: PanelOptions) {
     super(Options);
   }

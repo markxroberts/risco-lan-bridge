@@ -30,6 +30,7 @@ interface RiscoCommEvents {
   'NewMBSystemStatusFromPanel': (data: string) => void;
   'NewZoneStatusFromPanel': (data: string) => void;
   'Clock': (data: string) => void;
+  'CommsError': (data: string) => void;
 }
 
 export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
@@ -78,7 +79,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
       cloudUrl: (options.cloudUrl || 'www.riscocloud.com'),
       cloudPort: options.cloudPort || 33000,
       panelConnectionDelay: options.panelConnectionDelay || 30000,
-      cloudConnectionDelay: options.cloudConnectionDelay || 5000,
+      cloudConnectionDelay: options.cloudConnectionDelay || 5000
     };
 
     if (options.commandsLog) {
@@ -125,6 +126,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
     //verify if listener exist before kill it
     if (this.tcpSocket !== undefined) {
       logger.log('debug', `A TCP Socket already exists, clearing its listeners before creating a new one`);
+      this.emit('CommsError', 'New socket being connected')
       this.tcpSocket.removeAllListeners();
     }
     let tcpSocket: RiscoBaseSocket;
@@ -138,8 +140,10 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
 
     this.tcpSocket.once('Disconnected', (allowReconnect: boolean) => {
       logger.log('info', `TCP Socket Disconnected`);
+      this.emit('CommsError', 'Socket Disconnected')
       if (this.isDisconnecting || !allowReconnect) {
         logger.log('info', `Won't attempt automatic reconnection`);
+        this.emit('CommsError', 'No reconnection')
         if (this.autoReconnectTimer !== undefined) {
           clearTimeout(this.autoReconnectTimer);
         }
@@ -314,6 +318,19 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
           SupportPirCam: false,
         };
       }
+      case PanelType.RP432MP: {
+        let MaxZones = 512;
+        let MaxOutputs = 196;
+        return {
+          PanelType: panelType,
+          PanelModel: 'LightSys Plus',
+          PanelFW: firmwareVersion,
+          MaxZones: MaxZones,
+          MaxParts: 32,
+          MaxOutputs: MaxOutputs,
+          SupportPirCam: true,
+        };
+      }
       case PanelType.RP512: {
         let MaxZones = 64;
         // At the moment, only zones up to 128.
@@ -354,7 +371,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
    */
   async GetPanelFwVersion(panelType: string): Promise<string> {
     assertIsDefined(this.tcpSocket, 'tcpSocket');
-    if (panelType === PanelType.RP432 || panelType === PanelType.RP512) {
+    if (panelType === PanelType.RP432 || panelType === PanelType.RP432MP || panelType === PanelType.RP512) {
       let FwVersion = '';
       try {
         FwVersion = await this.tcpSocket.getResult('FSVER?');
@@ -656,6 +673,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
     for (const val of values) {
       const statusError = this.tcpSocket!!.getErrorCode(val);
       if (statusError) {
+        this.emit('CommsError', statusError[0])
         return [true, statusError[0]];
       }
     }
@@ -674,7 +692,9 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
           } catch (e) {
             if (e instanceof RiscoCommandError) {
               logger.log('warn', 'Failed to send CLOCK command: ' + e);
+              this.emit('CommsError', JSON.stringify(e as Error))
             } else {
+              this.emit('CommsError', JSON.stringify(e as Error))
               throw e;
             }
           }
