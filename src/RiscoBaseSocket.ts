@@ -44,6 +44,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
 
   protected socketTimeout: number;
   panelSocket: Socket | undefined;
+  socketOptions: SocketOptions;
 
   isPanelSocketConnected = false;
   isPanelConnected = false;
