@@ -44,7 +44,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
 
   protected socketTimeout: number;
   panelSocket: Socket | undefined;
-  socketOptions: SocketOptions;
+  protected socketOptions: SocketOptions;
 
   isPanelSocketConnected = false;
   isPanelConnected = false;
@@ -67,7 +67,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
   };
   protected rCrypt: RiscoCrypt;
 
-  protected constructor(protected socketOptions: SocketOptions, private commandsStream: WriteStream | undefined) {
+  protected constructor(private commandsStream: WriteStream | undefined) {
     super();
     this.socketTimeout = 30000;
     this.rCrypt = new RiscoCrypt({
