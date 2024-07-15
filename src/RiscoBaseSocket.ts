@@ -44,7 +44,6 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
 
   protected socketTimeout: number;
   panelSocket: Socket | undefined;
-  protected socketOptions: SocketOptions;
 
   isPanelSocketConnected = false;
   isPanelConnected = false;
@@ -59,7 +58,6 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
   private badCRCTimer?: NodeJS.Timeout;
   private badCRCCount = 0;
 
-  private badCRCLimit = socketOptions.badCRCLimit || 10;
   private inflightCommands: (CommandContext | undefined)[] = [];
 
   private lastCommand: CommandContext = {
@@ -67,13 +65,15 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
   };
   protected rCrypt: RiscoCrypt;
 
-  protected constructor(private commandsStream: WriteStream | undefined) {
+  protected constructor(protected socketOptions: SocketOptions, private commandsStream: WriteStream | undefined) {
     super();
     this.socketTimeout = 30000;
     this.rCrypt = new RiscoCrypt({
       panelId: socketOptions.panelId,
       encoding: socketOptions.encoding || 'utf-8',
-    });
+    },
+    this.BadCRCLimit = socketOptions.badCRCLimit || 10 
+    );
   }
 
   abstract connect(): Promise<boolean>
