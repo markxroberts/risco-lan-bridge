@@ -79,7 +79,8 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
       cloudUrl: (options.cloudUrl || 'www.riscocloud.com'),
       cloudPort: options.cloudPort || 33000,
       panelConnectionDelay: options.panelConnectionDelay || 30000,
-      cloudConnectionDelay: options.cloudConnectionDelay || 5000
+      cloudConnectionDelay: options.cloudConnectionDelay || 5000,
+      badCRCLimit: options.badCRCLimit || 10
     };
 
     if (options.commandsLog) {
@@ -88,7 +89,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
       this.commandsStream = fs.createWriteStream(commandsFileName, { flags: 'a' });
     }
 
-    this.reconnectDelay = 10000;
+    this.reconnectDelay = options.reconnectDelay || 10000;
     this.disableRC = false;
     this.enableRC = false;
     this.ntpServer = options.ntpServer || 'pool.ntp.org';

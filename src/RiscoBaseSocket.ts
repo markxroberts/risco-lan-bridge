@@ -33,6 +33,7 @@ export interface SocketOptions {
   panelConnectionDelay: number,
   cloudConnectionDelay: number,
   socketMode: SocketMode,
+  badCRCLimit: number
 }
 
 const dataSeparator = `${String.fromCharCode(3)}${String.fromCharCode(2)}`;
@@ -57,7 +58,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
   private badCRCTimer?: NodeJS.Timeout;
   private badCRCCount = 0;
 
-  private badCRCLimit = 10;
+  private badCRCLimit = socketOptions.badCRCLimit || 10;
   private inflightCommands: (CommandContext | undefined)[] = [];
 
   private lastCommand: CommandContext = {
