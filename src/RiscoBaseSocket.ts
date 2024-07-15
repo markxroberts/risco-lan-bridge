@@ -71,9 +71,8 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
     this.rCrypt = new RiscoCrypt({
       panelId: socketOptions.panelId,
       encoding: socketOptions.encoding || 'utf-8',
-    },
-    this.BadCRCLimit = socketOptions.badCRCLimit || 10 
-    );
+    }),
+    this.badCRCLimit = socketOptions.badCRCLimit || 10;
   }
 
   abstract connect(): Promise<boolean>
