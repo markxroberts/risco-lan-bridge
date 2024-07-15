@@ -10,10 +10,10 @@ jobs:
       # Setup .npmrc file to publish to npm
       - uses: actions/setup-node@v2
         with:
-          node-version: '12.x'
+          node-version: '18.x'
           registry-url: 'https://registry.npmjs.org'
       - run: yarn
       - run: yarn build
-      - run: yarn publish --access public --new-version 0.15.2
+      - run: yarn publish --access public --new-version 0.16.1
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

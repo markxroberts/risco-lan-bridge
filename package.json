@@ -1,7 +1,7 @@
 {
   "name": "@markxroberts/risco-lan-bridge",
   "displayName": "Risco Lan Bridge",
-  "version": "0.15.2",
+  "version": "0.16.1",
   "typings": "dist/index.d.ts",
   "description": "Risco Lan Bridge allows direct communication with most Risco control panels. It allows you to recover in real time the state of your system and to perform the arming/disarming functions or the inhibition of the detection zones.",
   "directories": {
@@ -52,25 +52,25 @@
   "license": "MIT",
   "homepage": "https://github.com/markxroberts/risco-lan-bridge#readme",
   "devDependencies": {
-    "@tsconfig/recommended": "^1.0.1",
-    "@types/jest": "^27.0.3",
-    "@types/node": "^17.0.2",
-    "@typescript-eslint/eslint-plugin": "^5.8.0",
-    "@typescript-eslint/parser": "^5.8.0",
-    "eslint": "^8.5.0",
-    "eslint-config-prettier": "^8.3.0",
-    "eslint-plugin-import": "^2.25.3",
-    "jest": "^27.4.5",
+    "@tsconfig/recommended": "^1.0.6",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^18.11.9",
+    "@typescript-eslint/eslint-plugin": "^7.13.0",
+    "@typescript-eslint/parser": "^7.13.0",
+    "eslint": "^9.4.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "jest": "^29.7.0",
     "onchange": "^7.1.0",
-    "prettier": "^2.5.1",
-    "rimraf": "^3.0.2",
-    "ts-jest": "^27.1.2",
-    "tsc-watch": "^4.6.0",
+    "prettier": "^3.3.2",
+    "rimraf": "^5.0.7",
+    "ts-jest": "^29.1.4",
+    "tsc-watch": "^6.2.0",
     "tsdx": "^0.14.1",
-    "typescript": "^4.5.4"
+    "typescript": "^5.4.5"
   },
   "dependencies": {
     "tiny-typed-emitter": "^2.1.0",
-    "tslib": "^2.3.1"
+    "tslib": "^2.6.3"
   }
 }
