@@ -12,7 +12,7 @@ function readConfig(): PanelOptions {
     console.log('Loading config from: ' + configPathjson);
     return JSON.parse(readFileSync(configPathjson, 'utf-8'));
   }
-  if (fs.existsSync(configPathyaml)) {
+  else if (fs.existsSync(configPathyaml)) {
     console.log('Loading config from: ' + configPathyaml);
     return yaml.load(readFileSync(configPathyaml, 'utf-8'));
   } else {
