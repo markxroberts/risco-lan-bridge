@@ -2,8 +2,7 @@
   "extends": "@tsconfig/recommended/tsconfig.json",
   "include": [
     "src",
-    "types",
-    "yamljs"
+    "types"
   ],
   "compilerOptions": {
     "outDir": "./dist",
@@ -29,6 +28,11 @@
     // significant perf increase by skipping checking .d.ts files, particularly those in node_modules. Recommended by TS
     "skipLibCheck": true,
     // error out if import and file system have a casing mismatch. Recommended by TS
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "plugins": [
+      {
+        "name": "@yaml-js/typescript"
+      }
+    ]
   }
 }
