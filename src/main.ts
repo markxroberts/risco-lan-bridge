@@ -3,14 +3,20 @@
 import { PanelOptions, RiscoPanel } from './index';
 import path from 'path';
 import fs, { readFileSync } from 'fs';
+import yamljs from yamljs;
 
 function readConfig(): PanelOptions {
-  const configPath = path.join(process.cwd(), 'config.json');
-  console.log('Loading config from: ' + configPath);
-  if (fs.existsSync(configPath)) {
-    return JSON.parse(readFileSync(configPath, 'utf-8'));
+  const configPathjson = path.join(process.cwd(), 'config.json');
+  const configPathyaml = path.join(process.cwd(), 'config.yaml');
+  if (fs.existsSync(configPathjson)) {
+    console.log('Loading config from: ' + configPathjson);
+    return JSON.parse(readFileSync(configPathjson, 'utf-8'));
+  }
+  if (fs.existsSync(configPathyaml)) {
+    console.log('Loading config from: ' + configPathyaml);
+    return YAML.load(configPathyaml);
   } else {
-    throw new Error('file config.json does not exist');
+    throw new Error('Config file does not exist.  Please ensure config.json or config.yaml present before restarting.');
   }
 }
 
@@ -31,6 +37,10 @@ panel.on('SystemInitComplete', () => {
 
   panel.outputs.on('OStatusChanged', (Id, EventStr) => {
     console.log(`OStatusChanged: ${Id} ${EventStr}`);
+  });
+
+  panel.system.on('SStatusChanged', (Id, EventStr) => {
+    console.log(`SStatusChanged: ${Id} ${EventStr}`);
   });
 });
 
