@@ -2,7 +2,8 @@
   "extends": "@tsconfig/recommended/tsconfig.json",
   "include": [
     "src",
-    "types"
+    "types",
+    "yamljs"
   ],
   "compilerOptions": {
     "outDir": "./dist",
