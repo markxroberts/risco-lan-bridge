@@ -15,7 +15,7 @@ function readConfig(): PanelOptions {
   else if (fs.existsSync(configPathyaml)) {
     console.log('Loading config from: ' + configPathyaml);
     const yamlfile = readFileSync(configPathyaml, 'utf-8')
-    return JSON.stringify(yaml.load(yamlfile, {"json": true}));
+    return JSON.parse(yaml.load(yamlfile, {"json": true}));
   } else {
     throw new Error('Config file does not exist.  Please ensure config.json or config.yaml present before restarting.');
   }
