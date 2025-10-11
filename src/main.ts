@@ -3,7 +3,7 @@
 import { PanelOptions, RiscoPanel } from './index';
 import path from 'path';
 import fs, { readFileSync } from 'fs';
-import yamljs from yamljs;
+import yamljs from 'yamljs';
 
 function readConfig(): PanelOptions {
   const configPathjson = path.join(process.cwd(), 'config.json');
@@ -39,7 +39,7 @@ panel.on('SystemInitComplete', () => {
     console.log(`OStatusChanged: ${Id} ${EventStr}`);
   });
 
-  panel.system.on('SStatusChanged', (Id, EventStr) => {
+  panel.mbSystem.on('SStatusChanged', (Id, EventStr) => {
     console.log(`SStatusChanged: ${Id} ${EventStr}`);
   });
 });
