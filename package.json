@@ -1,7 +1,7 @@
 {
   "name": "@markxroberts/risco-lan-bridge",
   "displayName": "Risco Lan Bridge",
-  "version": "0.16.9",
+  "version": "0.16.10",
   "typings": "dist/index.d.ts",
   "description": "Risco Lan Bridge allows direct communication with most Risco control panels. It allows you to recover in real time the state of your system and to perform the arming/disarming functions or the inhibition of the detection zones.",
   "directories": {
@@ -72,6 +72,6 @@
   "dependencies": {
     "tiny-typed-emitter": "^2.1.0",
     "tslib": "^2.6.3",
-    "@types/js-yaml": "^4.1.0"
+    "@types/js-yaml": "^4.0.9"
   }
 }
