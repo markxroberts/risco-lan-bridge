@@ -8,11 +8,11 @@ import yaml from 'js-yaml';
 function readConfig(): PanelOptions {
   const configPathjson = path.join(process.cwd(), 'config.json');
   const configPathyaml = path.join(process.cwd(), 'config.yaml');
-  if (fs.existsSync(configPathjson)) {
-    console.log('Loading config from: ' + configPathjson);
-    return JSON.parse(readFileSync(configPathjson, 'utf-8'));
-  }
-  else if (fs.existsSync(configPathyaml)) {
+//  if (fs.existsSync(configPathjson)) {
+//    console.log('Loading config from: ' + configPathjson);
+//    return JSON.parse(readFileSync(configPathjson, 'utf-8'));
+//  }
+  if (fs.existsSync(configPathyaml)) {
     console.log('Loading config from: ' + configPathyaml);
     return JSON.parse(yaml.load(readFileSync(configPathyaml, 'utf-8')));
   } else {
