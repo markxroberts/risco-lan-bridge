@@ -142,13 +142,13 @@ export class Partition extends EventEmitter {
 
   async awayArm(): Promise<boolean> {
     assertIsDefined(this.riscoComm.tcpSocket, 'RiscoComm.tcpSocket', 'TCP is not initialized')
-    logger.log('debug', `Request for Full Arming partition ${this.Id}.`)
+    logger.log('debug', `[RLB] Request for away arming of partition ${this.Id}.`)
     if (!this.Ready || this.Open) {
-      logger.log('warn', `Failed to Full Arming partition ${this.Id} : partition is not ready or is open`)
+      logger.log('warn', `[RLB] Failed to away arm partition ${this.Id} : partition is not ready or is open`)
       return false
     }
     if (this.Arm && !this.HomeStay) {
-      logger.log('debug', `No need to arm away partition ${this.Id} : partition already armed away`)
+      logger.log('debug', `[RLB] No need to away arm partition ${this.Id} : partition already armed away`)
 
       return true
     } else {
@@ -158,13 +158,13 @@ export class Partition extends EventEmitter {
 
   async homeStayArm(): Promise<boolean> {
     assertIsDefined(this.riscoComm.tcpSocket, 'RiscoComm.tcpSocket', 'TCP is not initialized')
-    logger.log('debug', `Request for Stay Arming partition ${this.Id}.`)
+    logger.log('debug', `Request for home stay arming of partition ${this.Id}.`)
     if (!this.Ready || this.Open) {
-      logger.log('warn', `Failed to Stay Arming partition ${this.Id} : partition is not ready or is open`)
+      logger.log('warn', `[RLB] Failed to home stay arm partition ${this.Id} : partition is not ready or is open`)
       return false
     }
     if (this.HomeStay) {
-      logger.log('debug', `No need to arm home partition ${this.Id} : partition already armed home`)
+      logger.log('debug', `[RLB] No need to home stay arm partition ${this.Id} : partition already armed home`)
       return true
     } else {
       return await this.riscoComm.tcpSocket.getAckResult(`STAY=${this.Id}`)
@@ -173,13 +173,13 @@ export class Partition extends EventEmitter {
 
   async groupArm(armType: number): Promise<boolean> {
     assertIsDefined(this.riscoComm.tcpSocket, 'RiscoComm.tcpSocket', 'TCP is not initialized')
-    logger.log('debug', `Request for Group Arming partition ${this.Id}.`)
+    logger.log('debug', `Request for group arming of partition ${this.Id}.`)
     if (!this.Ready || this.Open) {
-      logger.log('warn', `Failed to Group Arming partition ${this.Id} : partition is not ready or is open`)
+      logger.log('warn', `[RLB] Failed to group arm of partition ${this.Id} : partition is not ready or is open`)
       return false
     }
     if (this.HomeStay || this.Arm) {
-      logger.log('debug', `No need to group arm partition ${this.Id} : partition already armed`)
+      logger.log('debug', `[RLB] No need to group arm partition ${this.Id} : partition already armed`)
       return true
     } else {
       return await this.riscoComm.tcpSocket.getAckResult(`GARM*${armType}=${this.Id}`)
@@ -188,9 +188,9 @@ export class Partition extends EventEmitter {
 
   async disarm(): Promise<boolean> {
     assertIsDefined(this.riscoComm.tcpSocket, 'RiscoComm.tcpSocket', 'TCP is not initialized')
-    logger.log('debug', `Request for Disarming partition ${this.Id}.`)
+    logger.log('debug', `[RLB] Request for disarming of partition ${this.Id}.`)
     if (!this.Arm && !this.HomeStay) {
-      logger.log('debug', `No need to disarm partition ${this.Id} : partition is not armed`)
+      logger.log('debug', `[RLB] No need to disarm partition ${this.Id} : partition is not armed`)
       return true
     } else {
       return await this.riscoComm.tcpSocket.getAckResult(`DISARM=${this.Id}`)
@@ -219,7 +219,7 @@ export class PartitionList extends EventEmitter {
 
   byId(Id: number): Partition {
     if ((Id > this.values.length) || (Id < 0)) {
-      logger.log('warn', `Invalid Partition id ${Id}`)
+      logger.log('warn', `[RLB] Invalid Partition id ${Id}`)
     }
     return this.values[Id - 1]
   }

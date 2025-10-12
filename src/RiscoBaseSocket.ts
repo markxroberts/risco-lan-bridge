@@ -96,10 +96,10 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
       const receivedBuffer = Buffer.from(subData);
       const stringedBuffer = this.bufferAsString(receivedBuffer);
 
-      logger.log('debug', `Received data Buffer : ${stringedBuffer}`);
+      logger.log('debug', `[RLB] Received data Buffer : ${stringedBuffer}`);
       const [receivedId, receivedCommandStr, isCRCOK] = this.rCrypt.decodeMessage(subData);
 
-      logger.log('verbose', `Command[${receivedId}] Received data: ${receivedCommandStr}, crcOk: ${isCRCOK}`);
+      logger.log('verbose', `[RLB] Command[${receivedId}] Received data: ${receivedCommandStr}, crcOk: ${isCRCOK}`);
 
       if (this.inCryptTest) {
         if (receivedCommandStr.startsWith('CLOCK')) {
@@ -107,7 +107,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
           continue;
         }
         // in crypto test, always return the result for analysis, event if CRC is KO
-        logger.log('verbose', `Command[${this.lastCommand.commandId}] inCryptTest enabled, emitting response without checks to latest sent command`);
+        logger.log('verbose', `[RLB] Command[${this.lastCommand.commandId}] inCryptTest enabled, emitting response without checks to latest sent command`);
         this.lastCommand.receivedBuffer = receivedBuffer;
         this.lastCommand.receivedStr = receivedCommandStr;
         this.lastCommand.crcOk = isCRCOK;
@@ -127,13 +127,13 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
         } else if (receivedId && receivedId >= 50) {
           // it's an info from panel
           // Send 'ACK' for acknowledge received datas
-          logger.log('debug', `Command[${receivedId}] Data from Panel, need to send an ACK`);
+          logger.log('debug', `[RLB] Command[${receivedId}] Data from Panel, need to send an ACK`);
           this.sendAck(receivedId);
         } else {
           // it's a response from panel
-          logger.log('debug', `Command[${receivedId}] Command response from Panel`);
+          logger.log('debug', `[RLB] Command[${receivedId}] Command response from Panel`);
           if (receivedId && this.inflightCommands[receivedId]) {
-            logger.log('debug', `Command[${receivedId}] Emitting expected command response`);
+            logger.log('debug', `[RLB] Command[${receivedId}] Emitting expected command response`);
             const cmdContext = this.inflightCommands[receivedId]!;
             cmdContext.receivedBuffer = receivedBuffer;
             cmdContext.receivedStr = receivedCommandStr;
@@ -141,7 +141,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
             this.commandResponseEmitter.emit(`CmdResponse_${receivedId}`, receivedCommandStr);
           } else {
             // Else, Unexpected response, we do not treat
-            logger.log('warn', `Command[${receivedId}] Command response was unexpected, ignoring. Data[${receivedCommandStr}]`);
+            logger.log('warn', `[RLB] Command[${receivedId}] Command response was unexpected, ignoring. Data[${receivedCommandStr}]`);
           }
         }
         if (this.isPanelSocketConnected) {
@@ -156,7 +156,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
   private async onCommandBadCrc(receivedId: number | null) {
     this.badCRCCount++;
     if (this.badCRCCount > this.badCRCLimit) {
-      logger.log('error', `Command[${receivedId}] Too many bad CRC value.`);
+      logger.log('error', `[RLB] Command[${receivedId}] Too many bad CRC value.`);
       this.emit('BadCRCLimit');
       await this.disconnect(true);
       return;
@@ -169,7 +169,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
       this.badCRCTimer = setTimeout(() => {
         this.badCRCCount = 0;
       }, 60000);
-      logger.log('warn', `Command[${receivedId}] Wrong CRC value for the response.`);
+      logger.log('warn', `[RLB] Command[${receivedId}] Wrong CRC value for the response.`);
       this.emit('BadCRCData');
     }
   }
@@ -211,21 +211,21 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
   async sendCommand(commandStr: string, progCmd = false, forceEncryption: boolean | undefined = undefined, cmdCtx?: CommandContext): Promise<string> {
     assertIsDefined(this.panelSocket, `panelSocket`, `sendCommand(${commandStr}): socket is undefined`);
     if (this.panelSocket.destroyed) {
-      logger.log('warn', `sendCommand(${commandStr}): Socket is destroyed, ignoring command`);
+      logger.log('warn', `[RLB] sendCommand(${commandStr}): Socket is destroyed, ignoring command`);
       return '';
     }
     if (!this.isPanelSocketConnected) {
-      logger.log('warn', `sendCommand(${commandStr}): Socket not connected, ignoring command`);
+      logger.log('warn', `[RLB] sendCommand(${commandStr}): Socket not connected, ignoring command`);
       return '';
     }
 
     while (this.inProg && !progCmd) {
       // if we are in programming mode, wait 5s before retry
-      logger.log('debug', `sendCommand: Waiting for programming mode to exit`);
+      logger.log('debug', `[RLB] sendCommand: Waiting for programming mode to exit`);
       await new Promise(r => setTimeout(r, 5000));
     }
     if (this.inProg && !progCmd) {
-      const message = `sendCommand: Programming mode did not exit after delay, rejecting command`;
+      const message = `[RLB] sendCommand: Programming mode did not exit after delay, rejecting command`;
       logger.log('error', message);
       throw new Error(message);
     }
@@ -252,7 +252,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
       responseTimeoutDelay = 5000;
     }
 
-    logger.log('verbose', `Command[${cmdId}] Sending Command: ${commandStr}`);
+    logger.log('verbose', `[RLB] Command[${cmdId}] Sending Command: ${commandStr}`);
     const responseHandler = (_: string) => {
       waitResponse = false;
       shouldRetry = false;
@@ -261,7 +261,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
     const socketErrorHandler = (err: Error) => {
       waitResponse = false;
       shouldRetry = false;
-      logger.log('error', `Command[${cmdId}] error: ${err}`);
+      logger.log('error', `[RLB] Command[${cmdId}] error: ${err}`);
       this.emit('SocketError', JSON.stringify(err))
     };
 
@@ -273,11 +273,11 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
       this.panelSocket.write(encryptedCmdBuffer);
       cmdCtx.sentBuffer = encryptedCmdBuffer;
 
-      logger.log('debug', `Command[${cmdId}] Writing command buffer to socket: ${this.bufferAsString(encryptedCmdBuffer)}`);
+      logger.log('debug', `[RLB] Command[${cmdId}] Writing command buffer to socket: ${this.bufferAsString(encryptedCmdBuffer)}`);
       this.emit('DataSent', this.currentCommandId, commandStr);
 
       const responseTimeout = setTimeout(() => {
-        logger.log('warn', `Command[${cmdId}] '${commandStr}' Timeout`);
+        logger.log('warn', `[RLB] Command[${cmdId}] '${commandStr}' Timeout`);
         isTimedOut = true;
         shouldRetry = true;
       }, responseTimeoutDelay);
@@ -295,11 +295,11 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
 
     if (shouldRetry && !this.disconnecting && cmdCtx.attempts <= 3) {
       this.traceCommand(cmdCtx);
-      logger.log('verbose', `Command[${cmdId}] retrying command`);
+      logger.log('verbose', `[RLB] Command[${cmdId}] retrying command`);
       return await this.sendCommand(commandStr, progCmd, forceEncryption, cmdCtx);
     } else {
       this.traceCommand(cmdCtx);
-      logger.log('debug', `Command[${cmdId}] command response : ${cmdCtx.receivedStr}`);
+      logger.log('debug', `[RLB] Command[${cmdId}] command response : ${cmdCtx.receivedStr}`);
       this.inflightCommands[cmdId] = undefined;
       if (cmdCtx.receivedStr !== undefined) {
         return cmdCtx.receivedStr;
@@ -342,7 +342,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
    */
   sendAck(id: number): void {
     assertIsDefined(this.panelSocket, 'Socket');
-    logger.log('debug', `Command[${id}] Sending Ack.`);
+    logger.log('debug', `[RLB] Command[${id}] Sending Ack.`);
     const EncryptedCmd = this.rCrypt.getCommandBuffer('ACK', id);
     this.panelSocket.write(EncryptedCmd);
   }
@@ -384,25 +384,25 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
     let success = false;
     try {
       if (await this.enableProgMode()) {
-        logger.log('info', `Setting RiscoCloud activation to ${enable}.`);
+        logger.log('info', `[RLB] Setting RiscoCloud activation to ${enable}.`);
         const elasenParam = enable ? 1 : 0;
         const data = await this.sendCommand(`ELASEN=${elasenParam}`, true);
         if (data.includes('ACK')) {
-          logger.log('info', `RiscoCloud Successfully updated.`);
+          logger.log('info', `[RLB] RiscoCloud Successfully updated.`);
           if (await this.disableProgMode()) {
             success = true;
           }
         } else {
-          logger.log('error', `Unable to update RiscoCloud. ELASEN command failed, see debug logs`);
+          logger.log('error', `[RLB] Unable to update RiscoCloud. ELASEN command failed, see debug logs`);
         }
       } else {
-        logger.log('error', `Error while updating RiscoCloud: failed to enable prog mode`);
+        logger.log('error', `[RLB] Error while updating RiscoCloud: failed to enable prog mode`);
       }
     } catch (err) {
-      logger.log('error', `Error while updating RiscoCloud: ${err}`);
+      logger.log('error', `[RLB] Error while updating RiscoCloud: ${err}`);
     } finally {
       if (!success) {
-        logger.log('error', `Something went wrong while updating RiscoCloud, Disconnecting`);
+        logger.log('error', `[RLB] Something went wrong while updating RiscoCloud, Disconnecting`);
         await this.disconnect(false);
       }
     }
@@ -416,33 +416,33 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
    * @return  {boolean}           true/false if success/fails
    */
   async modifyPanelConfig(CommandsArr: string[]): Promise<boolean> {
-    logger.log('info', `Modifying Panel Configuration.`);
+    logger.log('info', `[RLB] Modifying Panel Configuration.`);
     let failed = false;
     if (await this.enableProgMode()) {
       try {
         for (const command of CommandsArr) {
           const success = await this.getAckResult(command, true);
           if (!success) {
-            logger.log('error', `Modifying Panel Configuration failed for command ${command}`);
+            logger.log('error', `[RLB] Modifying Panel Configuration failed for command ${command}`);
             failed = true;
             break;
           }
         }
       } catch (e) {
-        logger.log('error', `Modifying Panel Configuration failed with error ${e}`);
+        logger.log('error', `[RLB] Modifying Panel Configuration failed with error ${e}`);
         failed = true;
       } finally {
         if (!await this.disableProgMode()) {
           failed = true;
-          logger.log('error', `Failed to disable programming mode while modifying Panel Configuration`);
+          logger.log('error', `[RLB] Failed to disable programming mode while modifying Panel Configuration`);
         }
       }
     } else {
       failed = true;
-      logger.log('error', `Failed to enable programming mode while modifying Panel Configuration`);
+      logger.log('error', `[RLB] Failed to enable programming mode while modifying Panel Configuration`);
     }
     if (failed) {
-      logger.log('error', `Disconnecting as Panel Configuration modification failed`);
+      logger.log('error', `[RLB] Disconnecting as Panel Configuration modification failed`);
       await this.disconnect(false);
     }
     return !failed;
@@ -455,15 +455,15 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
   async enableProgMode(): Promise<boolean> {
     try {
       if (await this.getAckResult(`PROG=1`, true)) {
-        logger.log('info', `Programming Mode enabled.`);
+        logger.log('info', `[RLB] Programming Mode enabled.`);
         this.inProg = true;
         return true;
       } else {
-        logger.log('error', `Cannot Enter Programming Mode.`);
+        logger.log('error', `[RLB] Cannot Enter Programming Mode.`);
         return false;
       }
     } catch (err) {
-      logger.log('error', `Cannot Enter Programming Mode: ${err}`);
+      logger.log('error', `[RLB] Cannot Enter Programming Mode: ${err}`);
       throw err;
     }
   }
@@ -475,24 +475,24 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
   async disableProgMode(): Promise<boolean> {
     try {
       if (await this.sendCommand(`PROG=2`, true)) {
-        logger.log('info', `Programmation Mode disabled.`);
+        logger.log('info', `[RLB] Programmation Mode disabled.`);
         this.inProg = false;
         return true;
       } else {
-        logger.log('error', `Cannot Exit Programmation Mode.`);
+        logger.log('error', `[RLB] Cannot Exit Programmation Mode.`);
         this.inProg = false;
         return false;
       }
     } catch (err) {
       this.inProg = false;
-      logger.log('error', `Cannot Exit Programmation Mode: ${err}`);
+      logger.log('error', `[RLB] Cannot Exit Programmation Mode: ${err}`);
       throw err;
 
     }
   }
 
   private async guessPassword(maxLength = 6): Promise<string | null> {
-    logger.log('debug', `Password is incorrect, trying to guess it`);
+    logger.log('debug', `[RLB] Password is incorrect, trying to guess it`);
     let foundPassword: string | null = null;
     if (maxLength >= 4) {
       // Starting with 4 digits, as it is the most common password size
@@ -520,11 +520,11 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
     }
     const maxValueForLength = Math.pow(10, length) - 1;
     let passwordAttempt = 0;
-    logger.log('info', `Trying passwords from ` + passwordAttempt.toString().padStart(length, '0') + ' to ' + maxValueForLength.toString().padStart(length, '0') + '...');
+    logger.log('info', `[RLB] Trying passwords from ` + passwordAttempt.toString().padStart(length, '0') + ' to ' + maxValueForLength.toString().padStart(length, '0') + '...');
     do {
       const paddedPwd = passwordAttempt.toString().padStart(length, '0');
       if (passwordAttempt % 100 == 0) {
-        logger.log('info', `${paddedPwd} to ${(passwordAttempt + 99).toString().padStart(length, '0')}...`);
+        logger.log('info', `[RLB] ${paddedPwd} to ${(passwordAttempt + 99).toString().padStart(length, '0')}...`);
       }
       const rmtSuccess = await this.getAckResult(`RMT=${paddedPwd}`);
       if (rmtSuccess) {
@@ -548,30 +548,30 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
 
     this.rCrypt.cryptCommands = false;
 
-    logger.log('verbose', `Authenticating to the panel`);
+    logger.log('verbose', `[RLB] Authenticating to the panel`);
     const rmtResponse = await this.sendCommand(`RMT=${this.socketOptions.panelPassword.toString().padStart(codeLength, '0')}`);
     let authenticationOk = false;
     if (!rmtResponse.includes('ACK')) {
-      logger.log('warn', `Provided password is incorrect`);
+      logger.log('warn', `[RLB] Provided password is incorrect`);
       if (this.isErrorCode(rmtResponse) && !this.disconnecting) {
         if (this.socketOptions.guessPasswordAndPanelId) {
-          logger.log('info', `Trying to guess password (brute force)`);
+          logger.log('info', `[RLB] Trying to guess password (brute force)`);
           this.inPasswordGuess = true;
           const foundPassword = await this.guessPassword();
           this.inPasswordGuess = false;
           if (foundPassword !== null) {
-            logger.log('info', `Discovered Access Code : ${foundPassword}`);
+            logger.log('info', `[RLB] Discovered Access Code : ${foundPassword}`);
             this.socketOptions.panelPassword = foundPassword;
             authenticationOk = true;
           } else {
-            logger.log('error', `Unable to discover password`);
+            logger.log('error', `[RLB] Unable to discover password`);
           }
         } else {
-          logger.log('error', `Password discovery is disabled`);
+          logger.log('error', `[RLB] Password discovery is disabled`);
         }
       }
       if (!authenticationOk) {
-        logger.log('error', `Not able to authenticate to the Panel, exiting`);
+        logger.log('error', `[RLB] Not able to authenticate to the Panel, exiting`);
         await this.disconnect(false);
         return false;
       }
@@ -579,21 +579,21 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
 
     if (await this.getAckResult(`LCL`)) {
       // Now, Encrypted channel is enabled
-      logger.log('debug', `LCL command result OK`);
+      logger.log('debug', `[RLB] LCL command result OK`);
       this.rCrypt.cryptCommands = true;
-      logger.log('verbose', `Setting up encryption using Panel Id`);
+      logger.log('verbose', `[RLB] Setting up encryption using Panel Id`);
       // await new Promise(r => setTimeout(r, 1000))
       this.isPanelConnected = await this.cryptoTest();
     } else {
-      logger.log('debug', `LCL command result KO`);
+      logger.log('debug', `[RLB] LCL command result KO`);
       this.isPanelConnected = false;
     }
 
     if (this.isPanelConnected) {
-      logger.log('verbose', `Connection to the control panel successfully established.`);
+      logger.log('verbose', `[RLB] Connection to the control panel successfully established.`);
       this.emit('PanelConnected');
     } else {
-      logger.log('error', `Unable to connect to the control panel.`);
+      logger.log('error', `[RLB] Unable to connect to the control panel.`);
       await this.disconnect(false);
     }
     return this.isPanelConnected;
@@ -605,7 +605,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
     let cryptResult = testerResult[0];
     const cryptedResponseBuffer = testerResult[1];
     if (!cryptResult) {
-      logger.log('warn', `Bad Panel Id: ${this.rCrypt.panelId}. Trying to find the right one`);
+      logger.log('warn', `[RLB] Bad Panel Id: ${this.rCrypt.panelId}. Trying to find the right one`);
       let possibleKey = 9999;
       do {
         let isPossibleKey = false;
@@ -616,10 +616,10 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
           this.rCrypt.updatePanelId(possibleKey);
           const [receivedId, receivedCommandStr, isCRCOK] = this.rCrypt.decodeMessage(testBufferData);
           if (receivedId == null && this.isErrorCode(receivedCommandStr) && isCRCOK) {
-            logger.log('info', `Panel Id is possible candidate : ${possibleKey}`);
+            logger.log('info', `[RLB] Panel Id is possible candidate : ${possibleKey}`);
             isPossibleKey = true;
           } else {
-            logger.log('debug', `Panel Id is not: ${possibleKey}`);
+            logger.log('debug', `[RLB] Panel Id is not: ${possibleKey}`);
             isPossibleKey = false;
           }
           possibleKey--;
@@ -629,14 +629,14 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
           [cryptResult] = await this.sendCryptTableTesterCmd();
           if (cryptResult) {
             this.inCryptTest = false;
-            logger.log('info', `Discovered Panel Id: ${this.rCrypt.panelId}`);
+            logger.log('info', `[RLB] Discovered Panel Id: ${this.rCrypt.panelId}`);
             this.socketOptions.panelId = this.rCrypt.panelId;
             await new Promise(r => setTimeout(r, 1000));
           } else {
-            logger.log('info', `Panel Id ${this.rCrypt.panelId} is incorrect`);
+            logger.log('info', `P[RLB] anel Id ${this.rCrypt.panelId} is incorrect`);
           }
         } else if (possibleKey < 0) {
-          logger.log('error', `No remaining possible Panel Id, abandon`);
+          logger.log('error', `[RLB] No remaining possible Panel Id, abandon`);
           this.inCryptTest = false;
         }
       } while (this.inCryptTest);
@@ -660,7 +660,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
     do {
       await new Promise(resolve => setTimeout(resolve, 500));
       response = await this.sendCommand(`${testCmd}?`, false);
-      logger.log('debug', `cryptTableTester response: ${response}, attempt: ${currentAttempt}`);
+      logger.log('debug', `[RLB] cryptTableTester response: ${response}, attempt: ${currentAttempt}`);
       currentAttempt++;
     } while (this.isErrorCode(response) && currentAttempt < maxAttempts);
     return [this.lastCommand.crcOk && !this.isErrorCode(response), this.lastCommand.receivedBuffer || Buffer.of()];

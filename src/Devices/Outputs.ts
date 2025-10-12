@@ -136,7 +136,7 @@ export class Output extends TypedEmitter<OutputEvents> {
   async toggleOutput(): Promise<boolean> {
     assertIsDefined(this.RiscoComm.tcpSocket, 'RiscoComm.tcpSocket', 'TCP is not initialized')
     try {
-        logger.log('debug', `Request for Toggle an Output.`)
+        logger.log('debug', `[RLB] Request for Toggle an Output.`)
         const ActOutputResult = await this.RiscoComm.tcpSocket.getAckResult(`ACTUO${this.Id}`)
         // Because Pulsed Output have no Status Update from Panel
         if (this.Pulsed) {
@@ -147,7 +147,7 @@ export class Output extends TypedEmitter<OutputEvents> {
         }
         return ActOutputResult
       } catch (err) {
-        logger.log('error', `Failed to Toggle Output : ${this.Id}`)
+        logger.log('error', `[RLB] Failed to Toggle Output : ${this.Id}`)
         throw err
       }
   }
@@ -175,7 +175,7 @@ export class OutputList extends TypedEmitter<OutputEvents> {
 
   byId(Id: number): Output {
     if ((Id > this.values.length) || (Id < 0)) {
-      logger.log('warn', `Invalid Output id ${Id}`)
+      logger.log('warn', `[RLB] Invalid Output id ${Id}`)
     }
     return this.values[Id - 1]
   }

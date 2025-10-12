@@ -84,7 +84,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
 
     if (options.commandsLog) {
       const commandsFileName = `risco-commands-${new Date().toISOString()}.csv`;
-      logger.log('info', `Logging commands to ${commandsFileName}`);
+      logger.log('info', `[RLB] Logging commands to ${commandsFileName}`);
       this.commandsStream = fs.createWriteStream(commandsFileName, { flags: 'a' });
     }
 
@@ -109,7 +109,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
       useGrouping: false,
     });
     const prefix = (localTZ >= 0) ? '+' : '-';
-    logger.log('debug', `Local GMT Timezone is : ${prefix}${hours}:${minutes}`);
+    logger.log('debug', `[RLB] Local Timezone is : ${prefix}${hours}:${minutes}`);
     return `${prefix}${hours}:${minutes}`;
   }
 
@@ -122,10 +122,10 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
    * Complete initialization of the Socket and connection to the control Panel.
    */
   async initRPSocket() {
-    logger.log('verbose', `Start Connection to Panel`);
+    logger.log('verbose', `[RLB] Start Connection to Panel`);
     //verify if listener exist before kill it
     if (this.tcpSocket !== undefined) {
-      logger.log('debug', `A TCP Socket already exists, clearing its listeners before creating a new one`);
+      logger.log('debug', `[RLB] A TCP Socket already exists, clearing its listeners before creating a new one`);
       this.emit('CommsError', 'New socket being connected')
       this.tcpSocket.removeAllListeners();
     }
@@ -136,19 +136,19 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
       tcpSocket = new RiscoDirectTCPSocket(this.socketOptions, this.commandsStream);
     }
     this.tcpSocket = tcpSocket;
-    logger.log('debug', `TCP Socket created`);
+    logger.log('debug', `[RLB] TCP Socket created`);
 
     this.tcpSocket.once('Disconnected', (allowReconnect: boolean) => {
-      logger.log('info', `TCP Socket Disconnected`);
+      logger.log('info', `[RLB] TCP Socket Disconnected`);
       this.emit('CommsError', 'Socket Disconnected')
       if (this.isDisconnecting || !allowReconnect) {
-        logger.log('info', `Won't attempt automatic reconnection`);
+        logger.log('info', `[RLB] Won't attempt automatic reconnection`);
         this.emit('CommsError', 'No reconnection')
         if (this.autoReconnectTimer !== undefined) {
           clearTimeout(this.autoReconnectTimer);
         }
       } else {
-        logger.log('info', `Automatic reconnection will be attempted in ${this.reconnectDelay} ms`);
+        logger.log('info', `[RLB] Automatic reconnection will be attempted in ${this.reconnectDelay} ms`);
         if (this.autoReconnectTimer === undefined) {
           this.autoReconnectTimer = setTimeout(() => {
             this.autoReconnectTimer = undefined;
@@ -167,12 +167,12 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
     });
 
     this.tcpSocket.on('PanelConnected', async () => {
-      logger.log('debug', `Risco Panel Connected.`);
+      logger.log('debug', `[RLB] Risco Panel Connected.`);
       const panelType = await this.getPanelType();
       this.panelInfo = await this.applyPanelOptions(panelType);
 
-      logger.log('info', `Panel info: ${this.panelInfo.PanelModel}/${this.panelInfo.PanelType}, FW ${this.panelInfo.PanelFW || 'Unknown'}`);
-      logger.log('info', `Panel options: ${this.panelInfo.MaxParts} parts, ${this.panelInfo.MaxZones} zones, ${this.panelInfo.MaxOutputs} outputs, Pir Cam support: ${this.panelInfo.SupportPirCam}`);
+      logger.log('info', `[RLB] Panel info: ${this.panelInfo.PanelModel}/${this.panelInfo.PanelType}, FW ${this.panelInfo.PanelFW || 'Unknown'}`);
+      logger.log('info', `[RLB] Panel options: ${this.panelInfo.MaxParts} partitions, ${this.panelInfo.MaxZones} zones, ${this.panelInfo.MaxOutputs} outputs, Pir Cam support: ${this.panelInfo.SupportPirCam}`);
 
       const CommandsArr = await this.verifyPanelConfiguration();
 
@@ -198,39 +198,39 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
       case (data.startsWith('B')): {
         const loglevel = (this.tcpSocket?.inCryptTest || this.tcpSocket?.inPasswordGuess) ? 'debug' : 'warn';
         if ((Object.keys(RiscoError)).includes(data)) {
-          logger.log(loglevel, `Command[${cmdId}] Receipt of an error code: ${RiscoError[data]}`);
+          logger.log(loglevel, `[RLB] Command[${cmdId}] Receipt of an error code: ${RiscoError[data]}`);
         } else {
-          logger.log(loglevel, `Command[${cmdId}] Data incomprehensible: ${data}`);
+          logger.log(loglevel, `[RLB] Command[${cmdId}] Data incomprehensible: ${data}`);
         }
         break;
       }
       case (data.startsWith('OSTT')):
-        logger.log('debug', `Command[${cmdId}] Data type: Output Status`);
+        logger.log('debug', `[RLB] Command[${cmdId}] Data type: Output Status`);
         this.emit('NewOutputStatusFromPanel', data);
         break;
       case (data.startsWith('PSTT')):
-        logger.log('debug', `Command[${cmdId}] Data type: Partition Status`);
+        logger.log('debug', `[RLB] Command[${cmdId}] Data type: Partition Status`);
         this.emit('NewPartitionStatusFromPanel', data);
         break;
       case (data.startsWith('SSTT')):
-        logger.log('debug', `Command[${cmdId}] Data type: System Status`);
+        logger.log('debug', `[RLB] Command[${cmdId}] Data type: System Status`);
         if (this.tcpSocket?.inProg && !data.includes('I')) {
           this.tcpSocket.inProg = false;
-          logger.log('debug', `Command[${cmdId}] Control unit exiting Programming mode.`);
+          logger.log('debug', `[RLB] Command[${cmdId}] Control unit exiting Programming mode.`);
         }
         this.emit('NewMBSystemStatusFromPanel', data);
         break;
       case (data.startsWith('ZSTT')):
-        logger.log('debug', `Command[${cmdId}] Data type: Zone Status`);
+        logger.log('debug', `[RLB] Command[${cmdId}] Data type: Zone Status`);
         this.emit('NewZoneStatusFromPanel', data);
         break;
       case (data.startsWith('CLOCK')):
-        logger.log('debug', `Command[${cmdId}] Data type: Clock`);
+        logger.log('debug', `[RLB] Command[${cmdId}] Data type: Clock`);
         this.emit('Clock', data);
         break;
       case (data.includes('STT')):
         // for hardware state (Keypad, Zone Extension, ....)
-        logger.log('debug', `Command[${cmdId}] Data type: Hardware Status`);
+        logger.log('debug', `[RLB] Command[${cmdId}] Data type: Hardware Status`);
         break;
     }
   }
@@ -239,7 +239,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
    *  For debug only
    */
   async DataFromPlugin(data: string, Sequence_Id: number) {
-    logger.log('debug', `Command[${Sequence_Id}] Data Sent : ${data}`);
+    logger.log('debug', `[RLB] Command[${Sequence_Id}] Data Sent : ${data}`);
   }
 
   /*
@@ -341,10 +341,10 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
 
         let SupportPirCam: boolean;
         if (this.compareVersion(firmwareVersion, '1.4.0.0') >= 0) {
-          logger.log('verbose', 'PirCam not supported for now.');
+          logger.log('verbose', '[RLB] PirCam not supported for now.');
           SupportPirCam = false;
         } else {
-          logger.log('verbose', 'PirCam not supported for now (Too Low Firmware version).');
+          logger.log('verbose', '[RLB] PirCam not supported for now (Too Low Firmware version).');
           SupportPirCam = false;
         }
 
@@ -360,7 +360,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
 
       }
       default:
-        throw new Error(`Unsupported panel type : ${panelType}`);
+        throw new Error(`[RLB] Unsupported panel type : ${panelType}`);
     }
   }
 
@@ -377,10 +377,10 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
         FwVersion = await this.tcpSocket.getResult('FSVER?');
         FwVersion = FwVersion.substring(0, FwVersion.indexOf(' '));
       } catch (err) {
-        logger.log('error', `Cannot retrieve Firmware Version.`);
+        logger.log('error', `[RLB] Cannot retrieve Firmware Version.`);
       }
       FwVersion = FwVersion ? FwVersion : 'Undetermined';
-      logger.log('debug', `Panel Firmware Version : ${FwVersion}`);
+      logger.log('debug', `[RLB] Panel Firmware Version : ${FwVersion}`);
       return FwVersion;
     }
     return 'N/A';
@@ -394,7 +394,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
     assertIsDefined(this.tcpSocket, 'tcpSocket');
     // Check the programming of the Risco Cloud according to the deactivation parameters
     const CommandArray = [];
-    logger.log('debug', `Checking the configuration of the control unit.`);
+    logger.log('debug', `[RLB] Checking the configuration of the control unit.`);
 
     if (this.disableRC && !this.enableRC) {
 
@@ -404,7 +404,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
       const RCloudStatus = await this.tcpSocket.getIntResult('ELASEN?');
       if (RCloudStatus) {
         CommandArray.push('ELASEN=0');
-        logger.log('debug', `Prepare Panel for Disabling RiscoCloud.`);
+        logger.log('debug', `[RLB] Prepare Panel for Disabling RiscoCloud.`);
       }
       // Check if the time zone is correctly configured
       const PanelTZ = await this.tcpSocket.getIntResult('TIMEZONE?');
@@ -415,26 +415,26 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
       if (TimeZoneStr[PanelTZ] !== this.GMT_TZ) {
         const newPanelTZ = Object.keys(TimeZoneStr).find(key => TimeZoneStr[parseInt(key, 10)] === this.GMT_TZ);
         CommandArray.push(`TIMEZONE=${newPanelTZ}`);
-        logger.log('debug', `Prepare Panel for Updating TimeZone.`);
+        logger.log('debug', `[RLB] Prepare Panel for Updating TimeZone.`);
       }
       if (PanelNtpServer !== this.ntpServer) {
         CommandArray.push(`INTP=${this.ntpServer}`);
-        logger.log('debug', `Prepare Panel for Updating NTP Server Address.`);
+        logger.log('debug', `[RLB] Prepare Panel for Updating NTP Server Address.`);
       }
       if (PanelNtpPort !== this.ntpPort) {
         CommandArray.push(`INTPP=${this.ntpPort}`);
-        logger.log('debug', `Prepare Panel for Updating NTP Server Port.`);
+        logger.log('debug', `[RLB] Prepare Panel for Updating NTP Server Port.`);
       }
       if (PanelNtpProto !== '1') {
         CommandArray.push('INTPPROT=1');
-        logger.log('debug', `Prepare Panel for Enabling Server.`);
+        logger.log('debug', `[RLB] Prepare Panel for Enabling Server.`);
       }
     } else if (this.enableRC && !this.disableRC) {
       // Enabling RiscoCloud
       const RCloudStatus = await this.tcpSocket.getIntResult('ELASEN?');
       if (!RCloudStatus) {
         CommandArray.push('ELASEN=1');
-        logger.log('debug', `Enabling RiscoCloud.`);
+        logger.log('debug', `[RLB] Enabling RiscoCloud.`);
       }
     }
 
@@ -490,7 +490,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
     if (this.disableRC) {
       await this.tcpSocket.updateRiscoCloud(false);
     } else {
-      logger.log('debug', `Disabling RiscoCloud functionality is not allowed.`);
+      logger.log('debug', `[RLB] Disabling RiscoCloud functionality is not allowed.`);
     }
   }
 
@@ -503,7 +503,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
     if (this.enableRC) {
       await this.tcpSocket.updateRiscoCloud(true);
     } else {
-      logger.log('debug', `Enabling RiscoCloud functionality is not allowed.`);
+      logger.log('debug', `[RLB] Enabling RiscoCloud functionality is not allowed.`);
     }
   }
 
@@ -515,12 +515,12 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
   async GetAllZonesData(): Promise<ZoneList> {
     assertIsDefined(this.tcpSocket, 'tcpSocket');
     assertIsDefined(this.panelInfo, 'panelInfo');
-    logger.log('info', `Retrieving zones configuration`);
+    logger.log('info', `[RLB] Retrieving zones configuration`);
     const zones = new ZoneList(this.panelInfo.MaxZones, this);
     for (let i = 1; i <= this.panelInfo.MaxZones; i++) {
       const zone = await this.getZoneStatus(i, zones);
       if (!zone) {
-        logger.log('info', `output ${i} does not exists, stopping outputs discovery`);
+        logger.log('info', `[RLB] output ${i} does not exists, stopping outputs discovery`);
         break;
       }
     }
@@ -534,12 +534,12 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
    * @return  {Zone}       Zone Object       Object representing the Zone
    */
   async getZoneStatus(id: number, zones: ZoneList): Promise<Zone | undefined> {
-    logger.log('debug', `Retrieving zone ${id} data`);
+    logger.log('debug', `[RLB] Retrieving zone ${id} data`);
     assertIsDefined(this.tcpSocket, 'tcpSocket');
     const ZTypeStr = await this.tcpSocket.getResult(`ZTYPE*${id}?`);
     const errorCheck = this.isAnyAnError(ZTypeStr);
     if (errorCheck[0]) {
-      logger.log('warn', `Got error while fetching zone ${id} status data: ${errorCheck[1]}`);
+      logger.log('warn', `[RLB] Got error while fetching zone ${id} status data: ${errorCheck[1]}`);
       return undefined;
     }
     const ZParts = await this.tcpSocket.getResult(`ZPART&*${id}?`);
@@ -567,12 +567,12 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
   async getAllOutputsData(): Promise<OutputList> {
     assertIsDefined(this.tcpSocket, 'tcpSocket');
     assertIsDefined(this.panelInfo, 'panelInfo');
-    logger.log('info', `Retrieving outputs configuration`);
+    logger.log('info', `[RLB] Retrieving outputs configuration`);
     const outputs = new OutputList(this.panelInfo.MaxOutputs, this);
     for (let i = 1; i <= this.panelInfo.MaxOutputs; i++) {
       const output = await this.getOutputStatus(i, outputs);
       if (!output) {
-        logger.log('info', `Output ${i} does not exists, stopping outputs discovery`);
+        logger.log('info', `[RLB] Output ${i} does not exists, stopping outputs discovery`);
         break;
       }
     }
@@ -587,11 +587,11 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
    */
   async getOutputStatus(id: number, outputs: OutputList): Promise<Output | undefined> {
     assertIsDefined(this.tcpSocket, 'tcpSocket');
-    logger.log('debug', `Retrieving output ${id} data`);
+    logger.log('debug', `[RLB] Retrieving output ${id} data`);
     const OStatus = await this.tcpSocket.getResult(`OSTT${id}?`);
     const errorCheck = this.isAnyAnError(OStatus);
     if (errorCheck[0]) {
-      logger.log('warn', `Got error while fetching output ${id} data: ${errorCheck[1]}`);
+      logger.log('warn', `[RLB] Got error while fetching output ${id} data: ${errorCheck[1]}`);
       return undefined;
     }
     const OType = await this.tcpSocket.getResult(`OTYPE${id}?`);
@@ -620,12 +620,12 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
   async getAllPartitionsData(): Promise<PartitionList> {
     assertIsDefined(this.tcpSocket, 'tcpSocket');
     assertIsDefined(this.panelInfo, 'panelInfo');
-    logger.log('info', `Retrieving partitions configuration`);
+    logger.log('info', `[RLB] Retrieving partitions configuration`);
     const partitions = new PartitionList(this.panelInfo.MaxParts, this);
     for (let i = 1; i <= this.panelInfo.MaxParts; i++) {
       const output = await this.getPartitionsStatus(i, partitions);
       if (!output) {
-        logger.log('info', `Partition ${i} does not exists, stopping partitions discovery`);
+        logger.log('info', `[RLB] Partition ${i} does not exists, stopping partitions discovery`);
         break;
       }
     }
@@ -640,11 +640,11 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
    */
   async getPartitionsStatus(id: number, partitions: PartitionList): Promise<Partition | undefined> {
     assertIsDefined(this.tcpSocket, 'tcpSocket');
-    logger.log('debug', `Retrieving partition ${id} data`);
+    logger.log('debug', `[RLB] Retrieving partition ${id} data`);
     const PLabels = await this.tcpSocket.getResult(`PLBL${id}?`);
     const errorCheck = this.isAnyAnError(PLabels);
     if (errorCheck[0]) {
-      logger.log('warn', `Got error while fetching partition${id} data: ${errorCheck[1]}`);
+      logger.log('warn', `[RLB] Got error while fetching partition${id} data: ${errorCheck[1]}`);
       return undefined;
     }
     const PStatus = await this.tcpSocket.getResult(`PSTT${id}?`);
@@ -662,7 +662,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
    */
   async getSystemData(): Promise<MBSystem> {
     assertIsDefined(this.tcpSocket, 'tcpSocket');
-    logger.log('info', `Retrieving System Information`);
+    logger.log('info', `[RLB] Retrieving System Information`);
     const SLabel = await this.tcpSocket.getResult(`SYSLBL?`);
     const SStatus = await this.tcpSocket.getResult(`SSTT?`);
 
@@ -691,7 +691,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
             await this.tcpSocket.sendCommand(`CLOCK`);
           } catch (e) {
             if (e instanceof RiscoCommandError) {
-              logger.log('warn', 'Failed to send CLOCK command: ' + e);
+              logger.log('warn', '[RLB] Failed to send CLOCK command: ' + e);
               this.emit('CommsError', JSON.stringify(e as Error))
             } else {
               this.emit('CommsError', JSON.stringify(e as Error))

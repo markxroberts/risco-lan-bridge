@@ -21,7 +21,7 @@ export class RiscoDirectTCPSocket extends RiscoBaseSocket {
 
     this.panelSocket.once('ready', async () => {
       this.isPanelSocketConnected = true
-      logger.log('verbose', `Socket Connected, log in to panel`)
+      logger.log('verbose', `[RLB] Socket Connected, log in to panel`)
       try {
         await this.panelConnect()
       } catch (e) {
@@ -30,15 +30,15 @@ export class RiscoDirectTCPSocket extends RiscoBaseSocket {
       }
     })
     this.panelSocket.once('error', (error) => {
-      logger.log('error', `Socket Error: ${error}`)
+      logger.log('error', `[RLB] Socket Error: ${error}`)
       this.disconnect(true)
     })
     this.panelSocket.once('close', () => {
-      logger.log('error', `Socket Closed.`)
+      logger.log('error', `[RLB] Socket Closed.`)
       this.disconnect(true)
     })
     this.panelSocket.once('timeout', () => {
-      logger.log('error', `Socket Timeout.`)
+      logger.log('error', `[RLB] Socket Timeout.`)
       this.disconnect(true)
     })
     this.panelSocket.on('data', (inputData: Buffer) => {
@@ -63,17 +63,17 @@ export class RiscoDirectTCPSocket extends RiscoBaseSocket {
         } catch (e) {
           this.emit('SocketError', JSON.stringify(e as Error))
           logger.log('warn', e)
-          logger.log('warn', 'Error while sending DCN command')
+          logger.log('warn', '[RLB] Error while sending DCN command')
         }
       }
       this.panelSocket.destroy()
-      logger.log('debug', `Socket Destroyed.`)
+      logger.log('debug', `[RLB] Socket Destroyed.`)
       this.panelSocket.removeAllListeners()
       this.panelSocket = undefined
     }
     this.isPanelSocketConnected = false
     this.emit('Disconnected', allowReconnect)
-    logger.log('debug', `Socket Disconnected.`)
+    logger.log('debug', `[RLB] Socket Disconnected.`)
     return true
   }
 

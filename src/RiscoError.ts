@@ -10,6 +10,6 @@ export class RiscoError extends Error {
 
 export class RiscoCommandError extends RiscoError {
   constructor(public cmd: CommandContext, reason: string) {
-    super(`Risco command error: ${reason}. Command: ${JSON.stringify(cmd)}`);
+    super(`[RLB] Risco command error: ${reason}. Command: ${JSON.stringify(cmd)}`);
   }
 }

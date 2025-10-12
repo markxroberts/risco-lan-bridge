@@ -211,10 +211,10 @@ export class Zone extends EventEmitter {
   async toggleBypass(): Promise<boolean> {
     assertIsDefined(this.RiscoComm.tcpSocket, 'RiscoComm.tcpSocket', 'TCP is not initialized');
     try {
-      logger.log('debug', `Request for Bypassing/UnBypassing a Zone.`);
+      logger.log('debug', `[RLB] Request for Bypassing/UnBypassing a Zone.`);
       return await this.RiscoComm.tcpSocket.getAckResult(`ZBYPAS=${this.Id}`);
     } catch (err) {
-      logger.log('error', `Failed to Bypass/UnBypass Zone ${this.Id} : ${err}`);
+      logger.log('error', `[RLB] Failed to Bypass/UnBypass Zone ${this.Id} : ${err}`);
       throw err;
     }
   }
@@ -242,7 +242,7 @@ export class ZoneList extends TypedEmitter<ZoneEvents> {
 
   byId(Id: number): Zone {
     if ((Id > this.values.length) || (Id < 0)) {
-      logger.log('warn', `Invalid zone id ${Id}`);
+      logger.log('warn', `[RLB] Invalid zone id ${Id}`);
     }
     return this.values[Id - 1];
   }

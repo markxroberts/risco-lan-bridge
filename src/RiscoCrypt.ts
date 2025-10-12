@@ -150,7 +150,7 @@ export class RiscoCrypt {
     } else {
       PseudoBuffer.fill(0);
     }
-    logger.log('debug', `Pseudo Buffer Created for Panel Id(${this.panelId})`);
+    logger.log('debug', `[RLB] Pseudo Buffer Created for Panel Id(${this.panelId})`);
     return PseudoBuffer;
   }
 
@@ -176,12 +176,12 @@ export class RiscoCrypt {
    */
   private isValidCRC(CmdId: number | null, decryptedMessage: string, receivedCrc: string): boolean {
     if (receivedCrc.length != 4) {
-      logger.log('debug', `Command[${CmdId}] Incorrect crc : expecting 4 chars length, got ${receivedCrc.length}`);
+      logger.log('debug', `[RLB] Command[${CmdId}] Incorrect crc : expecting 4 chars length, got ${receivedCrc.length}`);
       return false;
     }
     for (let i = 0; i < 4; i++) {
       if (receivedCrc.charCodeAt(i) > 127) {
-        logger.log('debug', `Command[${CmdId}] Incorrect crc : expecting ascii only chars`);
+        logger.log('debug', `[RLB] Command[${CmdId}] Incorrect crc : expecting ascii only chars`);
         return false;
       }
     }
@@ -190,7 +190,7 @@ export class RiscoCrypt {
 
     const computedCrc = this.getCommandCRC(strNoCRC);
     const crcOK = (receivedCrc == computedCrc);
-    logger.log('debug', `Command[${CmdId}] crcOK : ${crcOK}, Computed CRC : ${computedCrc}, Message CRC: ${receivedCrc}`);
+    logger.log('debug', `[RLB] Command[${CmdId}] crcOK : ${crcOK}, Computed CRC : ${computedCrc}, Message CRC: ${receivedCrc}`);
     return crcOK;
   }
 
