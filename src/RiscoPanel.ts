@@ -27,7 +27,7 @@ export interface PanelOptions {
   ntpPort?: number,
   commandsLog?: boolean,
   reconnectDelay?: number,
-  commandsLog?: boolean
+  badCRCLimit?: number
 }
 
 export class RiscoPanel extends EventEmitter {
