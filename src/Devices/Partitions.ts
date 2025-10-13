@@ -158,7 +158,7 @@ export class Partition extends EventEmitter {
 
   async homeStayArm(): Promise<boolean> {
     assertIsDefined(this.riscoComm.tcpSocket, 'RiscoComm.tcpSocket', 'TCP is not initialized')
-    logger.log('debug', `Request for home stay arming of partition ${this.Id}.`)
+    logger.log('debug', `[RLB] Request for home stay arming of partition ${this.Id}.`)
     if (!this.Ready || this.Open) {
       logger.log('warn', `[RLB] Failed to home stay arm partition ${this.Id} : partition is not ready or is open`)
       return false
@@ -173,9 +173,9 @@ export class Partition extends EventEmitter {
 
   async groupArm(armType: number): Promise<boolean> {
     assertIsDefined(this.riscoComm.tcpSocket, 'RiscoComm.tcpSocket', 'TCP is not initialized')
-    logger.log('debug', `Request for group arming of partition ${this.Id}.`)
+    logger.log('debug', `[RLB] Request for group arming of partition ${this.Id}.`)
     if (!this.Ready || this.Open) {
-      logger.log('warn', `[RLB] Failed to group arm of partition ${this.Id} : partition is not ready or is open`)
+      logger.log('warn', `[RLB] Failed to group arm partition ${this.Id} : partition is not ready or is open`)
       return false
     }
     if (this.HomeStay || this.Arm) {

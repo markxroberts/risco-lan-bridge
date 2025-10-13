@@ -42,9 +42,9 @@ interface OutputEvents {
 export class Output extends TypedEmitter<OutputEvents> {
 
   Id: number
-  RiscoComm: RiscoComm
+  private RiscoComm: RiscoComm
   Label: string
-  OStatus: string
+  private OStatus: string
 
   get Pulsed(): boolean {
     return this.Type % 2 === 0
