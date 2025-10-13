@@ -33,6 +33,7 @@ export interface SocketOptions {
   panelConnectionDelay: number,
   cloudConnectionDelay: number,
   socketMode: SocketMode,
+  badCRCLimit: number
 }
 
 const dataSeparator = `${String.fromCharCode(3)}${String.fromCharCode(2)}`;
@@ -56,8 +57,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
 
   private badCRCTimer?: NodeJS.Timeout;
   private badCRCCount = 0;
-
-  private badCRCLimit = 10;
+  private badCRCLimit: number;
   private inflightCommands: (CommandContext | undefined)[] = [];
 
   private lastCommand: CommandContext = {
@@ -68,6 +68,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
   protected constructor(protected socketOptions: SocketOptions, private commandsStream: WriteStream | undefined) {
     super();
     this.socketTimeout = 30000;
+    this.badCRCLimit = socketOptions.badCRCLimit || 10;
     this.rCrypt = new RiscoCrypt({
       panelId: socketOptions.panelId,
       encoding: socketOptions.encoding || 'utf-8',
@@ -633,7 +634,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
             this.socketOptions.panelId = this.rCrypt.panelId;
             await new Promise(r => setTimeout(r, 1000));
           } else {
-            logger.log('info', `P[RLB] anel Id ${this.rCrypt.panelId} is incorrect`);
+            logger.log('info', `[RLB] Panel Id ${this.rCrypt.panelId} is incorrect`);
           }
         } else if (possibleKey < 0) {
           logger.log('error', `[RLB] No remaining possible Panel Id, abandon`);

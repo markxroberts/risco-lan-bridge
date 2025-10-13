@@ -25,6 +25,8 @@ export interface PanelOptions {
   socketMode?: SocketMode,
   ntpServer?: string,
   ntpPort?: number,
+  commandsLog?: boolean,
+  reconnectDelay?: number,
   commandsLog?: boolean
 }
 

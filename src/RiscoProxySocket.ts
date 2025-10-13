@@ -211,16 +211,16 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
     switch (new_output_data[1]) {
       case 19: {
         // let DecryptedBuffer = Buffer.from(new_output_data, this.encoding).toString(this.encoding);
-        logger.log('debug', `[Panel => Cloud] Forwarding panel packet to cloud: ${stringedBuffer}`)
+        logger.log('debug', `[RLB][Panel => Cloud] Forwarding panel packet to cloud: ${stringedBuffer}`)
         if (this.isCloudSocketConnected) {
           this.cloudSocket.write(new_output_data)
         } else {
-          logger.log('warn', `[Panel => Cloud] Cloud socket not connected, discarding packet: ${stringedBuffer}`)
+          logger.log('warn', `[RLB][Panel => Cloud] Cloud socket not connected, discarding packet: ${stringedBuffer}`)
         }
         break
       }
       case 17: {
-        logger.log('debug', `[Panel => Bridge] Received encrypted data Buffer from Panel : ${stringedBuffer}`)
+        logger.log('debug', `[RLB][Panel => Bridge] Received encrypted data Buffer from Panel : ${stringedBuffer}`)
         // if (this.inRemoteConn) {
         //   // To be able to correctly intercept the end of the remote connection, we must be able to decrypt
         //   // the commands exchanged between the control panel and the RiscoCloud as soon as possible.
@@ -267,7 +267,7 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
         //   logger.log('debug', `[Panel => Bridge] Received unencrypted data Buffer from Panel : ${stringedBuffer}`)
         //   this.cloudSocket.write(new_output_data)
         // } else {
-        logger.log('debug', `[Panel => Bridge] Received unencrypted data Buffer from Panel : ${stringedBuffer}`)
+        logger.log('debug', `[RLB][Panel => Bridge] Received unencrypted data Buffer from Panel : ${stringedBuffer}`)
         await this.newDataHandler(new_output_data)
         // }
       }
@@ -284,7 +284,7 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
     switch (new_input_data[1]) {
       case 19: {
         this.cloudConnected = true
-        logger.log('debug', `[Cloud => Panel] Forwarding Cloud data Buffer to panel: ${dataBufferAsString}`)
+        logger.log('debug', `[RLB][Cloud => Panel] Forwarding Cloud data Buffer to panel: ${dataBufferAsString}`)
         // logger.log('debug', `Assuming connected in 45 seconds, don't know why...`);
         this.panelSocket.write(new_input_data)
         break
@@ -292,7 +292,7 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
       case 17: {
         const [cmdId, cmdStr, crcOK] = this.rCrypt.decodeMessage(new_input_data)
         logger.log('info', `${cmdId} ${cmdStr} ${crcOK}`)
-        logger.log('debug', `[Cloud => Panel] Forwarding encrypted Cloud data Buffer to panel: ${dataBufferAsString}`)
+        logger.log('debug', `[RLB][Cloud => Panel] Forwarding encrypted Cloud data Buffer to panel: ${dataBufferAsString}`)
         this.panelSocket.write(new_input_data)
         if (this.inRemoteConn && crcOK && cmdStr.includes('DCN')) {
           this.inRemoteConn = false
@@ -306,7 +306,7 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
       default: {
         const [cmdId, cmdStr, crcOK] = this.rCrypt.decodeMessage(new_input_data)
         logger.log('info', `${cmdId} ${cmdStr} ${crcOK}`)
-        logger.log('debug', `[Cloud => Panel] Forwarding unencrypted Cloud data Buffer from RiscoCloud : ${dataBufferAsString}`)
+        logger.log('debug', `[RLB][Cloud => Panel] Forwarding unencrypted Cloud data Buffer from RiscoCloud : ${dataBufferAsString}`)
         switch (true) {
           case (cmdStr.includes('RMT=')):
             this.emit('IncomingRemoteConnection')
@@ -352,7 +352,7 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
           await this.sendCommand('DCN')
         } catch (e) {
           logger.log('warn', e)
-          logger.log('warn', 'Error while sending DCN command')
+          logger.log('warn', '[RLB] Error while sending DCN command')
         }
       }
       let listenerdelay;
@@ -361,14 +361,14 @@ export class RiscoProxyTCPSocket extends RiscoBaseSocket {
           this.panelSocket.removeAllListeners()
           this.panelSocket.destroy()
           this.panelSocket = undefined
-          logger.log('debug', `Socket Destroyed.`)}},5000)
+          logger.log('debug', `[RLB] Socket Destroyed.`)}},5000)
     }
     if (this.cloudSocket !== undefined && !this.cloudSocket.destroyed) {
       let listenerdelay;
       listenerdelay = setTimeout(() => {
         this.cloudSocket.destroy()
         this.cloudSocket.removeAllListeners()
-        logger.log('debug', `RiscoCloud Socket Destroyed.`)},5000)
+        logger.log('debug', `[RLB] RiscoCloud Socket Destroyed.`)},5000)
     }
     this.isPanelConnected = this.cloudConnected = this.isCloudSocketConnected = this.isPanelSocketConnected = false
     this.emit('Disconnected', allowReconnect)
