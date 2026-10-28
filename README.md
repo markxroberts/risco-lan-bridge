@@ -105,3 +105,22 @@ For more information regarding operation or interactions with the hardware, plea
 
 ### License
 risco-lan-bridge is licensed under the MIT license, so you can dispose of it as you see fit under the terms of that license.
+
+
+## Development and publishing
+
+Use Node.js 22.14 or newer. Run `npm ci`, `npm run lint`, `npm run build`, `npm run typecheck:test`, and `npm test`. The default test command runs unit tests without a panel. `npm run test:integration` requires a real panel and local `config.json`; it is intentionally excluded from CI. `npm start` starts the example program and accepts JSON or YAML configuration.
+
+The supported Node versions are checked on GitHub Actions (22, 24, and 26). npm and GitHub Actions dependencies are checked weekly by Dependabot. `package-lock.json` is the lockfile used by CI and local installs; the former Yarn lockfile and unused TSDX/watch dependencies were removed.
+
+TypeScript stays on the 6.0 minor line: the current TypeScript ESLint parser supports TypeScript below 6.1 and ts-jest supports versions below 7. Node typings match the minimum supported Node 22 runtime. Update these together when the tools support a newer compiler. ESLint uses the current flat configuration format.
+
+The production dependency audit is clear. The full development audit currently reports a low-severity [unpatched deepmerge advisory](https://github.com/advisories/GHSA-gcqx-w48m-w2h4) through Jest's configuration dependencies (six package entries for the same advisory). The affected dependency is not shipped as a production dependency. Avoid automatic major downgrades suggested by `npm audit fix --force`; update Jest/deepmerge when a compatible fix becomes available.
+
+To release a new version:
+
+1. Choose a new package version, update `package.json` and `package-lock.json` together (for example with `npm version <new-version> --no-git-tag-version`), update this changelog, and commit the changes.
+2. Ensure **this bridge repository** has an Actions secret named `NPM_TOKEN` with npm publishing access to `@markxroberts/risco-lan-bridge`. Repository secrets are not shared automatically with risco-mqtt-local.
+3. Publish a GitHub release from that commit, with the tag exactly matching the package version and no `v` prefix. A mismatch produces a named error annotation and a job summary. Publishing only runs after the Node matrix passes. Prereleases publish under npm's `next` tag; other releases use `latest`.
+
+The workflow no longer forces version `0.16.22`. Choose an unpublished version; npm versions cannot be overwritten. Pull requests only run checks, and this PR does not publish anything. After releasing the bridge, update the bridge dependency and lockfile in risco-mqtt-local, test against the real panel, and release the add-on to make these changes available to users.

@@ -254,7 +254,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
     }
 
     logger.log('verbose', `[RLB] Command[${cmdId}] Sending Command: ${commandStr}`);
-    const responseHandler = (_: string) => {
+    const responseHandler = () => {
       waitResponse = false;
       shouldRetry = false;
     };
@@ -494,7 +494,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
 
   private async guessPassword(maxLength = 6): Promise<string | null> {
     logger.log('debug', `[RLB] Password is incorrect, trying to guess it`);
-    let foundPassword: string | null = null;
+    let foundPassword: string | null;
     if (maxLength >= 4) {
       // Starting with 4 digits, as it is the most common password size
       foundPassword = await this.guessPasswordForLength(4);
@@ -609,7 +609,7 @@ export abstract class RiscoBaseSocket extends TypedEmitter<RiscoSocketEvents> {
       logger.log('warn', `[RLB] Bad Panel Id: ${this.rCrypt.panelId}. Trying to find the right one`);
       let possibleKey = 9999;
       do {
-        let isPossibleKey = false;
+        let isPossibleKey: boolean;
         do {
           // Because the Buffer is modified by reference during decryption, a new Buffer is created on each attempt.
           const testBufferData = Buffer.alloc(cryptedResponseBuffer.length);

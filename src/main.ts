@@ -3,7 +3,7 @@
 import { PanelOptions, RiscoPanel } from './index';
 import path from 'path';
 import fs, { readFileSync } from 'fs';
-import yaml from 'js-yaml';
+import { load, CORE_SCHEMA, mergeTag } from 'js-yaml';
 
 function readConfig(): PanelOptions {
   const configPathjson = path.join(process.cwd(), 'config.json');
@@ -14,7 +14,7 @@ function readConfig(): PanelOptions {
   }
   else if (fs.existsSync(configPathyaml)) {
     console.log('[RLB] Loading config from: ' + configPathyaml);
-    return yaml.load(readFileSync(configPathyaml, 'utf-8')) as PanelOptions;
+    return load(readFileSync(configPathyaml, 'utf-8'), { schema: CORE_SCHEMA.withTags(mergeTag) }) as PanelOptions;
   } else {
     throw new Error('[RLB] Config file does not exist.  Please ensure config.json or config.yaml present before restarting.');
   }

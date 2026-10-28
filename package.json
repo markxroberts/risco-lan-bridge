@@ -14,10 +14,9 @@
     "src"
   ],
   "engines": {
-    "node": ">=10"
+    "node": ">=22.14.0"
   },
   "publishConfig": {
-    "cache": "~/.npm",
     "registry": "https://registry.npmjs.org/"
   },
   "repository": {
@@ -28,14 +27,16 @@
     "url": "https://github.com/markxroberts/risco-lan-bridge/issues"
   },
   "scripts": {
-    "build": "tsc",
-    "watch": "tsc-watch",
-    "lint": "eslint src --ext .ts",
-    "test": "jest --detectOpenHandles",
-    "testw": "jest --watch",
-    "start": "tsc && node ./dist/main.js",
-    "watch-dist": "onchange -i 'dist/**' -- cp -R dist ../risco-mqtt-local/node_modules/@markxroberts/risco-lan-bridge",
-    "test:unit": "jest --runInBand test/crypto.test.ts test/proxy-reconnect.test.ts"
+    "build": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\" && tsc",
+    "watch": "tsc -w",
+    "lint": "eslint src test",
+    "test": "npm run test:unit",
+    "test:unit": "jest --runInBand --silent --testPathIgnorePatterns=test/main.test.ts",
+    "test:integration": "jest --runInBand test/main.test.ts",
+    "testw": "jest --watch --testPathIgnorePatterns=test/main.test.ts",
+    "start": "npm run build && node ./dist/main.js",
+    "prepublishOnly": "npm run lint && npm run build && npm run typecheck:test && npm test",
+    "typecheck:test": "tsc --project tsconfig.test.json"
   },
   "keywords": [
     "risco",
@@ -49,30 +50,26 @@
     "prosysplus",
     "gtplus"
   ],
-  "author": "Mark Roberts <mark.roberts30@gmail.com",
+  "author": "Mark Roberts <mark.roberts30@gmail.com>",
   "license": "MIT",
   "homepage": "https://github.com/markxroberts/risco-lan-bridge#readme",
   "devDependencies": {
-    "@tsconfig/recommended": "^1.0.6",
-    "@types/jest": "^29.5.12",
-    "@types/node": "^18.11.9",
-    "@typescript-eslint/eslint-plugin": "^7.13.0",
-    "@typescript-eslint/parser": "^7.13.0",
-    "eslint": "^9.4.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-import": "^2.29.1",
-    "jest": "^29.7.0",
-    "onchange": "^7.1.0",
-    "prettier": "^3.3.2",
-    "rimraf": "^5.0.7",
-    "ts-jest": "^29.1.4",
-    "tsc-watch": "^6.2.0",
-    "tsdx": "^0.14.1",
-    "typescript": "^5.4.5"
+    "@eslint/js": "^10.0.1",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.20.5",
+    "eslint": "^10.13.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.13.0",
+    "jest": "^30.5.2",
+    "prettier": "^3.9.10",
+    "ts-jest": "^29.4.15",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.72.1"
   },
   "dependencies": {
     "tiny-typed-emitter": "^2.1.0",
-    "tslib": "^2.6.3",
-    "@types/js-yaml": "^4.0.9"
-  }
+    "tslib": "^2.8.1",
+    "js-yaml": "^5.5.0"
+  },
+  "main": "dist/index.js"
 }
