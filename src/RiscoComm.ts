@@ -248,7 +248,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
    */
   async getPanelType(): Promise<string> {
     assertIsDefined(this.tcpSocket, 'tcpSocket');
-    let PType = undefined;
+    let PType: string | undefined;
     do {
       PType = await this.tcpSocket.getResult('PNLCNF');
     } while (PType === undefined);
@@ -320,8 +320,8 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
         };
       }
       case PanelType.RP432MP: {
-        let MaxZones = 512;
-        let MaxOutputs = 196;
+        const MaxZones = 512;
+        const MaxOutputs = 196;
         return {
           PanelType: panelType,
           PanelModel: 'LightSys Plus',
@@ -377,7 +377,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
       try {
         FwVersion = await this.tcpSocket.getResult('FSVER?');
         FwVersion = FwVersion.substring(0, FwVersion.indexOf(' '));
-      } catch (err) {
+      } catch {
         logger.log('error', `[RLB] Cannot retrieve Firmware Version.`);
       }
       FwVersion = FwVersion ? FwVersion : 'Undetermined';
@@ -547,7 +547,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
     const ZGroups = await this.tcpSocket.getResult(`ZAREA&*${id}?`);
     const ZLabels = await this.tcpSocket.getResult(`ZLBL*${id}?`);
     const ZStatus = await this.tcpSocket.getResult(`ZSTT*${id}?`);
-    let ZTechno = await this.tcpSocket.getResult(`ZLNKTYP${id}?`);
+    const ZTechno = await this.tcpSocket.getResult(`ZLNKTYP${id}?`);
 
     const ZType = parseInt(await this.tcpSocket.getResult(`ZTYPE*${id}?`), 10);
 
@@ -672,7 +672,7 @@ export class RiscoComm extends TypedEmitter<RiscoCommEvents> {
 
   isAnyAnError(...values: string[]): [boolean, string | undefined] {
     for (const val of values) {
-      const statusError = this.tcpSocket!!.getErrorCode(val);
+      const statusError = this.tcpSocket!.getErrorCode(val);
       if (statusError) {
         this.emit('CommsError', statusError[0])
         return [true, statusError[0]];

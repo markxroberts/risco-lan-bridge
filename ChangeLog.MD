@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+* Refresh supported dependencies and tooling; require Node.js 22.14 or later and use an npm lockfile for reproducible installs.
+* Replace the fixed-version release command with tested, release-only npm publishing and clear version/credential errors.
+* Add Node 22/24/26 pull-request CI, current GitHub Actions, ESLint flat configuration, and weekly Dependabot checks.
+* Add the missing YAML runtime dependency, retaining YAML merge-key support; remove unused development tooling.
+* Separate unit tests from the physical-panel integration test, and add a valid package entry point and pre-publish checks.
+* Retry an initial unavailable cloud connection without repeatedly dropping the incoming panel socket.
+* Buffer panel registration data until the first cloud TCP connection is ready; attach panel error/close handlers immediately.
+* Bound cloud TCP connection attempts to 30 seconds and retain the existing 120-second idle timeout after connection.
+* Cancel cloud retry and panel-login timers during teardown, ignore stale socket callbacks, and make disconnect idempotent.
+* Skip DCN for unauthenticated panels and close captured sockets immediately instead of scheduling delayed teardown.
+* Retain the full reconnect when an already established cloud TCP session closes, since its protocol state may need resetting.
+* Add socket and timer regression tests; `npm run test:unit` runs these and the existing crypto tests without a physical panel.
+
 ## 0.10.4 (2021-01-11)
 * Merge Pull Requests from vanackej (#6 - Various bug fixes and code improvements by vanackej )
 

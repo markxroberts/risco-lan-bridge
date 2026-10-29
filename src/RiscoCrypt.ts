@@ -137,9 +137,8 @@ export class RiscoCrypt {
     const numArray = new Uint16Array([2, 4, 16, 32768]);
     if (pid !== 0) {
       for (let index = 0; index < BufferLength; ++index) {
-        let n1 = 0;
         let n2 = 0;
-        for (n1 = 0; n1 < 4; ++n1) {
+        for (let n1 = 0; n1 < 4; ++n1) {
           if ((pid & numArray[n1]) > 0) {
             n2 ^= 1;
           }
@@ -251,7 +250,7 @@ export class RiscoCrypt {
       }
     }
     const decrypt = RiscoCrypt.isEncrypted(charsCmd);
-    let offset = 0;
+    const offset = 0;
     let decryptedChars: number[] = [];
     let position = 0;
 

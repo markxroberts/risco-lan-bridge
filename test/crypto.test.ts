@@ -31,7 +31,7 @@ describe('Crypto tests', () => {
 
 function guessAllPossiblesPanelsIdAndEncodings(...items: number[]) {
   const buffer = Buffer.from(items);
-  let encodings: BufferEncoding[] = ['utf-8', 'latin1']
+  const encodings: BufferEncoding[] = ['utf-8', 'latin1']
   const panelsAndEncoding = []
   for (let i = 0; i < 9999; i++) {
 
